@@ -5,13 +5,15 @@
 }
 
 :root {
-    --ink: #1c1917;
-    --paper: #faf6f0;
-    --accent: #d95d39;
-    --accent-dark: #a8442a;
-    --line: #e3d9c9;
-    --text-muted: #6b6459;
+    --ink: #fff9f1;
+    --paper: #525517;
+    --accent: #fcfadf;
+    --accent-dark: #F9EAD2;
+    --line: #f8efc6;
+    --text-muted: #f8efc6;
+    --surface: #9d8517;
     --radius: 4px;
+    --radius2: 20px
 }
 
 body {
@@ -93,6 +95,44 @@ h1, .brand {
 .hero-identity h1 {
     font-size: clamp(3rem, 7vw, 5rem);
     line-height: 0.95;
+}
+
+.skillex {
+    padding: 4.5rem 0 5rem;
+}
+
+.skillex-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+}
+
+.skills, .experiences {
+    background-color: var(--accent);
+    padding: 2rem;
+    border-radius: var(--radius2);
+}
+
+.skills h2, .experiences h2 {
+    color: var(--surface);
+    margin-bottom: 1rem;
+}
+
+.skill, .experience {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.skill-item, .experience-item {
+    background-color: var(--surface);
+    color: var(--ink);
+    padding: 1.5rem;
+    border-radius: var(--radius2);
+}
+
+.skill-item h3, .experience-item h3 {
+    margin-bottom: 0.5rem;
 }
 
 .bio {
@@ -191,5 +231,9 @@ h1, .brand {
 
     .social-links {
         justify-content: flex-start;
+    }
+
+    .skillex-grid {
+        grid-template-columns: 1fr;
     }
 }
