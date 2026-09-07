@@ -7,7 +7,7 @@
 :root {
     --ink: #fff9f1;
     --paper: #525517;
-    --accent: #fcfadf;
+    --accent: #fff9f1;
     --accent-dark: #F9EAD2;
     --line: #f8efc6;
     --text-muted: #f8efc6;
@@ -129,10 +129,16 @@ h1, .brand {
     color: var(--ink);
     padding: 1.5rem;
     border-radius: var(--radius2);
+    transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .skill-item h3, .experience-item h3 {
     margin-bottom: 0.5rem;
+}
+
+.skill-item:hover, .experience-item:hover {
+    background-color: var(--paper);
+    transform: translateY(-3px);
 }
 
 .bio {
@@ -178,7 +184,7 @@ h1, .brand {
 }
 
 .social-link:hover {
-    background-color: var(--accent);
+    background-color: var(--surface);
 }
 
 .hero-photo {
