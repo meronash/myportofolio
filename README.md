@@ -29,5 +29,5 @@ Saya menggunakan ChatGPT untuk membantu pembuatan website portofolio ini dengan 
 2. Membantu debugging CSS, seperti memperbaiki hover pada Skill dan Experience
 3. Membantu masalah terkait GitHub
 
-###Strategi Prompting
+### Strategi Prompting
 Saya memberikan potongan kode dan permasalahan yang muncul. AI kemudian breakdown permasalahan tersebut dan saya mengevaluasi kembali output yang diberikan.  
