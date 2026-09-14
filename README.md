@@ -1,9 +1,8 @@
-Nama : Rona
+# Portofolio Website
+
+Nama : Rona Mahira
 NPM : 2506657314
 Kelas : PBP E
-
-
-# Portofolio Website
 
 ## Deskripsi
 Website portofolio pribadi yang berupa static web untuk menampilkan profile, skills, dan experience.
