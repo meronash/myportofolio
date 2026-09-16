@@ -141,7 +141,7 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 WHITENOISE_USE_FINDERS = True
-CSRF_TRUSTED_ORIGINS = ["https://rona-mahira-myportofolio.pws.cs.ui.ac.id/"]
+CSRF_TRUSTED_ORIGINS = ["https://rona-mahira-myportofolio.pws.cs.ui.ac.id"]
 
 
 # Email
