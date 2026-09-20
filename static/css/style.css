@@ -240,7 +240,7 @@ h1, .brand {
     text-transform: uppercase;
 }
 
-.experience-section h1 {
+.experience-section h1, .education-section h1{
     margin: 0.4rem 0 1.5rem;
     font-size: 2rem;
 }
@@ -377,6 +377,10 @@ h1, .brand {
     align-items: center;
     gap: 1rem;
     margin-bottom: 1.5rem;
+}
+
+.project-header h1, .education-header h1 {
+    margin-bottom: 0;
 }
 
 .project-grid, .education-grid {
