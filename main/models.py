@@ -35,7 +35,7 @@ class Education(models.Model):
     ended_at = models.DateField(blank=True, null=True)
     def __str__(self):
         return self.institution
-    
+     
     @property
     def is_ongoing(self):
         return self.ended_at is None

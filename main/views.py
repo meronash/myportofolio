@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from main.models import Experience, Education, Project
-from main.forms import ProjectForm
+from main.forms import ProjectForm, EducationForm
 
 
 def show_main(request):
@@ -27,12 +27,56 @@ def show_experience(request):
     }
     return render(request, "experience.html", context)
 
-def show_education(request):
+def create_education(request):
+    form = EducationForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Riwayat Pendidikan baru berhasil ditambahkan!")
+        return redirect("main:show_education")
+
     context = {
         "name": "Rona",
-        "education_list": Education.objects.all(),
+        "form": form,
+    }
+    return render(request, "education_form.html", context)
+
+def show_education(request):
+    json_response = get_education_json(request)
+
+    education = serializers.deserialize(
+        "json",
+        json_response.content.decode("utf-8"),
+    )
+    education = [edu.object for edu in education]
+    institution_query = request.GET.get("institution", "").strip()
+
+    context = {
+        "name": "Rona",
+        "education_list": education,
+        "institution_query": institution_query,
     }
     return render(request, "education.html", context)
+
+def get_education_json(request):
+    institution_query = request.GET.get("institution", "").strip()
+    education = Education.objects.all()
+
+    if institution_query:
+        education = education.filter(institution__icontains=institution_query)
+
+    education_json = serializers.serialize("json", education)
+    return HttpResponse(education_json, content_type="application/json")
+
+def delete_education(request, education_id):
+    education = get_object_or_404(Education, pk=education_id)
+
+    if request.method == "POST":
+        education.delete()
+        messages.success(request, "Riwayat Pendidikan berhasil dihapus!")
+        return redirect("main:show_education")
+
+    return redirect("main:show_education")
 
 def create_project(request):
     form = ProjectForm(request.POST or None)
