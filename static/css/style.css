@@ -275,7 +275,7 @@ h1, .brand {
     color: var(--text-muted);
 }
 
-.experience-status{
+.experience-status, .education-status{
     margin-top: 1rem;
     font-size: 0.85rem;
     font-weight: 600;
@@ -362,12 +362,6 @@ h1, .brand {
 
 .education-description {
     color: var(--text-muted);
-}
-
-.education-status {
-    margin-top: 1rem;
-    font-size: 0.85rem;
-    font-weight: 600;
 }
 
 .project-header, .education-header {
@@ -518,7 +512,7 @@ h1, .brand {
     font-size: 1.5rem;
 }
 
-.project-delete-modal__close, .eduaction-delete-modal__close {
+.project-delete-modal__close, .education-delete-modal__close {
     position: absolute;
     top: 1rem;
     right: 1rem;

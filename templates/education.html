@@ -17,7 +17,6 @@
                     Tambah Riwayat Pendidikan
                 </a>
             </div>
-
             <form method="get"
                 action="{% url 'main:show_education' %}"
                 class="education-search">
@@ -29,7 +28,6 @@
                     aria-label="Cari berdasarkan nama institusi">
                 <button type="submit" class="button">Cari</button>
             </form>
-
             <div class="education-grid">
                 {% for education in education_list %}
                     <article class="education-card">
@@ -48,8 +46,13 @@
                         {% else %}
                             <p class="education-status">Selesai</p>
                         {% endif %}
+                        <div class="education-card-actions">
+                            <div class="education-actions">
+                                {% include "components/education_delete_modal.html" with education=education %}
+                            </div>
+                        </div>
                     </article>
-
+                
                 {% empty %}
                     {% if institution_query %}
                         <p class="empty-state">Tidak ada pendidikan dengan nama institusi tersebut.</p>
