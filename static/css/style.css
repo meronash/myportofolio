@@ -245,13 +245,9 @@ h1, .brand {
     font-size: 2rem;
 }
 
-.experience-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1rem;
-}
-
-.experience-card {
+.experience-card, .education-card {
+    display: flex;
+    flex-direction: column;
     padding: 1.25rem;
     background-color: var(--surface);
     border: 1px solid var(--line);
@@ -265,7 +261,7 @@ h1, .brand {
     text-transform: uppercase;
 }
 
-.experience-card h2 .education-card h2 {
+.experience-card h2, .education-card h2 {
     margin: 0.5rem 0;
     font-size: 1.25rem;
 }
@@ -281,7 +277,7 @@ h1, .brand {
     font-weight: 600;
 }
 
-.project-form, .education-form{
+.project-form, .education-form, .experience-form{
     width: 100%;
     max-width: 100%;
     margin-top: 1.5rem;
@@ -344,15 +340,6 @@ h1, .brand {
     background: var(--accent-dark);
 }
 
-.education-card {
-    display: flex;
-    flex-direction: column;
-    padding: 1.25rem;
-    background-color: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-} 
-
 .education-degree {
     color: var(--accent-dark);
     font-size: 0.75rem;
@@ -364,7 +351,7 @@ h1, .brand {
     color: var(--text-muted);
 }
 
-.project-header, .education-header {
+.project-header, .education-header, .experience-header {
     width: 100%;
     display: flex;
     justify-content: space-between;
@@ -373,11 +360,11 @@ h1, .brand {
     margin-bottom: 1.5rem;
 }
 
-.project-header h1, .education-header h1 {
+.project-header h1, .education-header h1, .experience-header h1 {
     margin-bottom: 0;
 }
 
-.project-grid, .education-grid {
+.project-grid, .education-grid, .experience-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
@@ -396,28 +383,24 @@ h1, .brand {
     border-radius: var(--radius);
 }
 
-.project-header h1, .education-header h1 {
-    margin-bottom: 0;
-}
-
-.project-add-button, .education-add-button {
+.project-add-button, .education-add-button, .experience-add-button {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
 }
 
-.project-add-button span, .education-add-button span {
+.project-add-button span, .education-add-button span, .experience-add-button span {
     font-size: 1.25rem;
     line-height: 1;
 }
 
-.project-search, .education-search {
+.project-search, .education-search, .experience-search {
     display: flex;
     gap: 0.75rem;
     margin-bottom: 1.5rem;
 }
 
-.project-search__input, .education-search__input {
+.project-search__input, .education-search__input, .experience-search__input {
     width: 100%;
     min-width: 0;
     padding: 0.7rem;
@@ -428,12 +411,12 @@ h1, .brand {
     font: inherit;
 }
 
-.project-search__input:focus, .education-search__input:focus {
+.project-search__input:focus, .education-search__input:focus, .experience-search__input:focus {
     outline: 2px solid var(--accent);
     border-color: var(--accent);
 }
 
-.project-actions, .education-actions {
+.project-actions, .education-actions, .experience-actions {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -441,12 +424,12 @@ h1, .brand {
     margin-top: 1rem;
 }
 
-.project-actions .button, .education-actions .button {
+.project-actions .button, .education-actions .button, .experience-actions .button {
     font-size: 0.85rem;
     font-weight: 600;
 }
 
-.project-card-actions, .education-card-actions {
+.project-card-actions, .education-card-actions, .experience-card-actions {
     display: flex;
     flex-direction: column;
     margin-top: auto;
@@ -460,7 +443,7 @@ h1, .brand {
     margin-top: 0;
 }
 
-.project-delete-modal, .education-delete-modal {
+.project-delete-modal, .education-delete-modal, .experience-delete-modal {
     display: none;
     position: fixed;
     inset: 0;
@@ -477,11 +460,11 @@ h1, .brand {
     justify-content: center;
 }
 
-.project-delete-modal:popover-open, .education-delete-modal:popover-open{
+.project-delete-modal:popover-open, .education-delete-modal:popover-open, .experience-delete-modal:popover-open{
     display: flex;
 }
 
-.project-delete-modal__backdrop, .education-delete-modal__backdrop {
+.project-delete-modal__backdrop, .education-delete-modal__backdrop, .experience-delete-modal__backdrop {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -492,7 +475,7 @@ h1, .brand {
     cursor: default;
 }
 
-.project-delete-modal__content, .education-delete-modal__content {
+.project-delete-modal__content, .education-delete-modal__content, .experience-delete-modal__content {
     position: relative;
     z-index: 1;
     width: min(100%, 480px);
@@ -503,7 +486,7 @@ h1, .brand {
     box-shadow: 0 1rem 3rem rgba(28, 25, 23, 0.22);
 }
 
-.project-delete-modal__content h2, .education-delete-modal__content h2 {
+.project-delete-modal__content h2, .education-delete-modal__content h2, .education-delete-modal__content h2 {
     margin: 0 0 0.75rem;
     font-family:
         "Space Grotesk",
@@ -512,7 +495,7 @@ h1, .brand {
     font-size: 1.5rem;
 }
 
-.project-delete-modal__close, .education-delete-modal__close {
+.project-delete-modal__close, .education-delete-modal__close, .experience-delete-modal__close {
     position: absolute;
     top: 1rem;
     right: 1rem;
@@ -525,7 +508,7 @@ h1, .brand {
     cursor: pointer;
 }
 
-.project-delete-modal__actions, .education-delete-modal__actions {
+.project-delete-modal__actions, .education-delete-modal__actions, .experience-delete-modal__actions {
     display: flex;
     justify-content: flex-end;
     gap: 0.75rem;
@@ -557,40 +540,40 @@ h1, .brand {
         grid-template-columns: 1fr;
     }
 
-    .project-header, .education-header {
+    .project-header, .education-header, .experience-header {
         align-items: flex-start;
         flex-direction: column;
     }
 
-    .project-add-button, .project-add-button {
+    .project-add-button, .education-add-button, .experience-add-button {
         width: 100%;
         justify-content: center;
     }
 
-    .project-search, .education-search {
+    .project-search, .education-search, .experience-search {
         flex-direction: column;
     }
 
-    .project-search .button, .education-search .button {
+    .project-search .button, .education-search .button, .experience-search .button {
         width: 100%;
     }
 
-    .project-delete-modal, .project-delete-modal {
+    .project-delete-modal, .education-delete-modal, .experience-delete-modal {
         align-items: flex-end;
         padding: 0;
     }
 
-    .project-delete-modal__content, .project-delete-modal__content {
+    .project-delete-modal__content, .project-delete-modal__content, .experience-delete-modal__content {
         width: 100%;
         padding: 1.25rem;
         border-radius: var(--radius) var(--radius) 0 0;
     }
 
-    .project-delete-modal__actions, .project-delete-modal__actions {
+    .project-delete-modal__actions, .project-delete-modal__actions, .experience-delete-modal__actions {
         flex-direction: column-reverse;
     }
 
-    .project-delete-modal__actions .button, .project-delete-modal__actions .button {
+    .project-delete-modal__actions .button, .project-delete-modal__actions .button, .experience-delete-modal .button {
         width: 100%;
         text-align: center;
     }
