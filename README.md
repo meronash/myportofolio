@@ -6,15 +6,20 @@ NPM : 2506657314
 Kelas : PBP E
 
 ## Deskripsi
-Website portofolio pribadi yang berupa static web untuk menampilkan profile, skills, dan experience.
+Website portofolio pribadi berbasis Django untuk menampilkan profile, skills, experience, education, dan projects secara dinamis.
 
 ### Fitur
 1. Menampilkan profil pribadi
 2. Menampilkan skills
 3. Menampilkan experience
-4. Menampilkan social links
-5. Responsive layout untuk desktop dan mobile
-6. Hover effect pada bagian social links dan skills-experience
+4. Menampilkan riwayat pendidikan
+5. Menampilkan projects
+6. Menampilkan social links
+7. Menambahkan, mengubah, dan menghapus data education dan projects
+8. Fitur pencarian berdasarkan nama institusi dan nama project
+9. Menyediakan data education dan projects dalam format JSON melalui API
+10. Responsive layout untuk desktop dan mobile
+11. Form dengan validasi menggunakan Django ModelForm 
 
 ## Pertanyaan Reflektif 1
 1. Ya, saya menggunakan section dalam merancang struktur HTML. Penggunaan section membantu saya membagi halaman web menjadi beberapa bagian (untuk saat ini masih 2 bagian), yaitu Profile dan Skill-Experience. Selain itu, styling menggunakan CSS menjadi lebih mudah karena pembagian halaman web tersebut.
@@ -44,6 +49,23 @@ Saya menggunakan ChatGPT untuk membantu pembuatan website portofolio ini dengan 
 1. Menjelaskan lebih lanjut mengenai MVT
 2. Membantu debugging
 3. Membantu menyelesaikan masalah terkait GitHub
+
+### Strategi Prompting
+Saya memberikan potongan kode dan permasalahan yang muncul. AI kemudian breakdown permasalahan tersebut dan saya mengevaluasi kembali output yang diberikan. 
+
+## Pertanyaan reflektif 3
+1. Penggunaan ModelForm memungkinkan Django membuat form berdasarkan model yang telah didefinisikan. Dengan begitu tidak perlu membuat setiap input HTML dan proses validasinya secara manual. ModelForm juga membantu memastikan data yang dimasukkan sesuai dengan field dan aturan yang telah ditentukan pada model.
+{% csrf_token %} digunakan untuk memberikan CSRF protection pada form, sehingga dapat dipastikan request yang melakukan perubahan data berasal dari form yang dibuat oleh aplikasi kita. Dengan demikian, aplikasi akan mencegah request palsu dari pihak lain yang mencoba melakukan aksi menggunakan sesi pengguna.
+2. JSON lebih banyak digunakan karena formatnya lebih sederhana dan ringan dibanding XML. Struktur JSON menggunakan pasangan key-value dan array sehingga lebih mudah dibaca dan diproses oleh aplikasi.
+3. Client mengirimkan request ke URL API yang sudah diarahkan ke view get_projects_json > View mengambil data dari database > Data masih berupa object Django dalam bentuk QuerySet > Data diubah menjadi forman JSON > Data JSON dikembalikan sebagai respons > Client menerima respons tersebut dan dapat menggunakan data project dalam format JSON.
+
+## Deklarasi AI
+Saya menggunakan ChatGPT untuk membantu pembuatan website portofolio ini dengan rincian sebagai berikut.
+
+### Penggunaan AI
+1. Menjelaskan lebih lanjut mengenai ModelForm pada Django
+2. Membantu debugging
+3. Membantu menyelesaikan masalah desain css
 
 ### Strategi Prompting
 Saya memberikan potongan kode dan permasalahan yang muncul. AI kemudian breakdown permasalahan tersebut dan saya mengevaluasi kembali output yang diberikan. 

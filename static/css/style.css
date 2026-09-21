@@ -340,8 +340,8 @@ h1, .brand {
 }
 
 .button-secondary {
-    color: var(--line);
-    background: var(--ink);
+    color: var(--surface);
+    background: var(--accent-dark);
 }
 
 .education-card {
