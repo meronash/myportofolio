@@ -1,14 +1,26 @@
 {% extends "base.html" %}
 {% block meta %}
-    <title>Add Education - {{ name }}</title>
+    <title>
+        {% if education %}
+            Update Education - {{ name }}
+        {% else %}
+            Add Education - {{ name }}
+        {% endif %}
+    </title>
 {% endblock meta %}
 {% block content %}
     <main>
         <section class="experience-section">
             <div class="container">
-                <h1>Add New Education</h1>
+                <h1>
+                    {% if education %}
+                        Update Education
+                    {% else %}
+                        Add New Education
+                    {% endif %}
+                </h1>
                 <form method="post"
-                      action="{% url 'main:create_education' %}"
+                      action="{% if education %}{% url 'main:update_education' education.id %}{% else %}{% url 'main:create_education' %}{% endif %}"
                       class="education-form">
                     {% csrf_token %}
                     {% for field in form %}
@@ -20,7 +32,13 @@
                             {% endfor %}
                         </div>
                     {% endfor %}
-                    <button type="submit" class="button">Tambah Riwayat Pendidikan</button>
+                    <button type="submit" class="button">
+                        {% if education %}
+                            Update
+                        {% else %}
+                            Tambah Riwayat Pendidikan
+                        {% endif %}
+                    </button>
                     <a href="{% url 'main:show_education' %}" class="button button-secondary">Batal</a>
                 </form>
             </div>

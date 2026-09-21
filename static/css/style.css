@@ -340,7 +340,7 @@ h1, .brand {
 }
 
 .button-secondary {
-    color: var(--surface);
+    color: var(--line);
     background: var(--ink);
 }
 
