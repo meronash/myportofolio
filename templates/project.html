@@ -16,7 +16,7 @@
                         class="button project-add-button">
                         <span aria-hidden="true">+</span>
                         Tambah Proyek
-                    </a>
+                    </a> 
                 {% endif %}
             </div>
             <form method="get"
@@ -46,10 +46,12 @@
                                     {% if project.project_url %}
                                         <a href="{{ project.project_url }}" class="button">Lihat Project</a>
                                     {% endif %}
-                                    <a href="{% url 'main:update_project' project.id %}"
-                                        class="button button-secondary">
-                                        Update
-                                    </a>
+                                    {% if user.is_superuser or is_editor %}
+                                        <a href="{% url 'main:update_project' project.id %}"
+                                            class="button button-secondary">
+                                            Update
+                                        </a>
+                                    {% endif %}
                                     {% include "components/project_star.html" with project=project %}
                                     {% if user.is_superuser %}
                                         {% include "components/project_delete_modal.html" with project=project %}

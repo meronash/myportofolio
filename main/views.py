@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -11,6 +12,9 @@ from main.models import Experience, Education, Project
 from main.forms import ExperienceForm, ProjectForm, EducationForm
 
 import datetime
+
+def is_editor(user):
+    return user.groups.filter(name="Editor").exists()
 
 def show_main(request):
     last_login = request.COOKIES.get('last_login', 'Belum ada sesi login / Cookie tidak ditemukan')
@@ -26,7 +30,11 @@ def show_main(request):
     }
     return render(request, "index.html", context)
 
+@login_required(login_url="/login/")
 def create_experience(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    
     form = ExperienceForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
@@ -54,6 +62,7 @@ def show_experience(request):
         "name": "Rona",
         "experience_list": experience,
         "title_query": title_query,
+        "is_editor": is_editor(request.user),
     }
     return render(request, "experience.html", context)
 
@@ -67,7 +76,11 @@ def get_experience_json(request):
     experience_json = serializers.serialize("json", experience)
     return HttpResponse(experience_json, content_type="application/json")
 
+@login_required(login_url="/login/")
 def delete_experience(request, experience_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    
     experience = get_object_or_404(Experience, pk=experience_id)
 
     if request.method == "POST":
@@ -77,7 +90,11 @@ def delete_experience(request, experience_id):
 
     return redirect("main:show_experience")
 
+@login_required(login_url="/login/")
 def update_experience(request, experience_id):
+    if not request.user.is_superuser and not is_editor(request.user):
+        raise PermissionDenied
+
     experience = get_object_or_404(Experience, pk=experience_id)
     form = ExperienceForm(request.POST or None, instance=experience)
 
@@ -94,7 +111,11 @@ def update_experience(request, experience_id):
 
     return render(request, "experience_form.html", context)
 
+@login_required(login_url="/login/")
 def create_education(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    
     form = EducationForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
@@ -122,6 +143,7 @@ def show_education(request):
         "name": "Rona",
         "education_list": education,
         "institution_query": institution_query,
+        "is_editor": is_editor(request.user),
     }
     return render(request, "education.html", context)
 
@@ -135,7 +157,11 @@ def get_education_json(request):
     education_json = serializers.serialize("json", education)
     return HttpResponse(education_json, content_type="application/json")
 
+@login_required(login_url="/login/")
 def delete_education(request, education_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    
     education = get_object_or_404(Education, pk=education_id)
 
     if request.method == "POST":
@@ -145,7 +171,11 @@ def delete_education(request, education_id):
 
     return redirect("main:show_education")
 
+@login_required(login_url="/login/")
 def update_education(request, education_id):
+    if not request.user.is_superuser and not is_editor(request.user):
+        raise PermissionDenied
+
     education = get_object_or_404(Education, pk=education_id)
     form = EducationForm(request.POST or None, instance=education)
 
@@ -194,6 +224,7 @@ def show_projects(request):
         "name": "Rona",
         "project_list": projects,
         "title_query": title_query,
+        "is_editor": is_editor(request.user),
     }
     return render(request, "project.html", context)
 
@@ -221,7 +252,11 @@ def delete_project(request, project_id):
 
     return redirect("main:show_projects")
 
+@login_required(login_url="/login/")
 def update_project(request, project_id):
+    if not request.user.is_superuser and not is_editor(request.user):
+        raise PermissionDenied
+
     project = get_object_or_404(Project, pk=project_id)
     form = ProjectForm(request.POST or None, instance=project)
 

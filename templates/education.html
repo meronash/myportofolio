@@ -11,11 +11,13 @@
             <p class="section-kicker">Riwayat pendidikan saya</p>
             <div class="education-header">
                 <h1>Education</h1>
-                <a href="{% url 'main:create_education' %}"
-                    class="button education-add-button">
-                    <span aria-hidden="true">+</span>
-                    Tambah Riwayat Pendidikan
-                </a>
+                {% if user.is_superuser %}
+                    <a href="{% url 'main:create_education' %}"
+                        class="button education-add-button">
+                        <span aria-hidden="true">+</span>
+                        Tambah Riwayat Pendidikan
+                    </a>
+                {% endif %}
             </div>
             <form method="get"
                 action="{% url 'main:show_education' %}"
@@ -48,11 +50,15 @@
                         {% endif %} 
                         <div class="education-card-actions">
                             <div class="education-actions">
-                                <a href="{% url 'main:update_education' education.id %}"
-                                    class="button button-secondary">
-                                    Update
-                                </a>
-                                {% include "components/education_delete_modal.html" with education=education %}
+                                {% if user.is_superuser or is_editor %}
+                                    <a href="{% url 'main:update_education' education.id %}"
+                                        class="button button-secondary">
+                                        Update
+                                    </a>
+                                {% endif %}
+                                {% if user.is_superuser %}
+                                    {% include "components/education_delete_modal.html" with education=education %}
+                                {% endif %}
                             </div>
                         </div>
                     </article>

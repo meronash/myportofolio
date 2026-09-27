@@ -528,10 +528,11 @@ h1, .brand {
     align-items: center;
     gap: 0.4rem;
     background: var(--ink);
+    color: var(--paper);
 }
 
 .button-star.is-starred {
-    background: var(--accent);
+    background: var(--line);
 }
 
 .star-count {
