@@ -69,3 +69,16 @@ Saya menggunakan ChatGPT untuk membantu pembuatan website portofolio ini dengan 
 
 ### Strategi Prompting
 Saya memberikan potongan kode dan permasalahan yang muncul. AI kemudian breakdown permasalahan tersebut dan saya mengevaluasi kembali output yang diberikan. 
+
+## Pertanyaan reflektif 4
+
+## Deklarasi AI
+Saya menggunakan ChatGPT untuk membantu pembuatan website portofolio ini dengan rincian sebagai berikut.
+
+### Penggunaan AI
+1. Menjelaskan lebih lanjut mengenai Autentikasi pada Django
+2. Membantu debugging
+3. Membantu menyelesaikan masalah desain css
+
+### Strategi Prompting
+Saya memberikan potongan kode dan permasalahan yang muncul. AI kemudian breakdown permasalahan tersebut dan saya mengevaluasi kembali output yang diberikan. 
