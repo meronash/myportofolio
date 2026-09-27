@@ -11,14 +11,15 @@ load_dotenv()
 
 USER_PASSWORD = os.getenv("E2E_USER_PASSWORD")
 ADMIN_PASSWORD = os.getenv("E2E_ADMIN_PASSWORD")
+EDITOR_PASSWORD = os.getenv("E2E_EDITOR_PASSWORD")
 
-if not USER_PASSWORD or not ADMIN_PASSWORD:
-    sys.exit("E2E_USER_PASSWORD dan E2E_ADMIN_PASSWORD belum diisi di berkas .env.")
+if not USER_PASSWORD or not ADMIN_PASSWORD or not EDITOR_PASSWORD:
+    sys.exit("E2E_USER_PASSWORD, E2E_ADMIN_PASSWORD, dan E2E_EDITOR_PASSWORD belum diisi di berkas .env.")
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "portofolio.settings")
 django.setup()
-from django.contrib.auth.models import User
-
+from django.contrib.auth.models import User, Group
+from main.models import Project
 
 def setup_users():
     user, _ = User.objects.get_or_create(username="burhan_test")
@@ -27,15 +28,28 @@ def setup_users():
     user.is_staff = False
     user.save()
 
+    editor_group, _ = Group.objects.get_or_create(name="Editor")
+    editor, _ = User.objects.get_or_create(username="editor_test")
+    editor.set_password(EDITOR_PASSWORD)
+    editor.is_superuser = False
+    editor.is_staff = True
+    editor.save()
+    editor.groups.add(editor_group)
+
     admin, _ = User.objects.get_or_create(username="admin_test")
     admin.set_password(ADMIN_PASSWORD)
     admin.is_superuser = True
     admin.is_staff = True
     admin.save()
 
+    project, _ = Project.objects.get_or_create(
+        title="Dummy Project",
+        defaults={"description": "Test", "tech_stack": "Python"}
+    )
+    return str(project.id)
 
 def main():
-    setup_users()
+    dummy_project_id = setup_users()
 
     options = webdriver.ChromeOptions()
     if "--headless" in sys.argv:
@@ -49,7 +63,6 @@ def main():
     base_url = "http://127.0.0.1:8000"
 
     try:
-        # 1. Cek csrf token di form login
         try:
             driver.get(f"{base_url}/login/")
         except Exception:
@@ -62,7 +75,6 @@ def main():
         assert driver.get_cookie("csrftoken")
         print("[PASS] CSRF token dan cookie terverifikasi")
 
-        # 2. Cek login user biasa dan cookie sesi
         driver.find_element(By.NAME, "username").send_keys("burhan_test")
         driver.find_element(By.NAME, "password").send_keys(USER_PASSWORD)
         driver.find_element(By.XPATH, "//button[@type='submit']").click()
@@ -73,12 +85,26 @@ def main():
         assert "Sesi Terakhir Login" in driver.page_source or "Last Login" in driver.page_source
         print("[PASS] Login user biasa dan cookie sesi berhasil")
 
-        # 3. Cek pembatasan akses user biasa ke form tambah proyek
         driver.get(f"{base_url}/projects/add/")
         assert "403" in driver.title or "Forbidden" in driver.page_source
         print("[PASS] Otorisasi user biasa dibatasi (403)")
 
-        # 4. Cek akses superuser ke form tambah proyek
+        driver.get(f"{base_url}/logout/")
+        wait.until(EC.presence_of_element_located((By.XPATH, "//a[contains(@href, '/login/')]")))
+        driver.get(f"{base_url}/login/")
+        wait.until(EC.presence_of_element_located((By.NAME, "username"))).send_keys("editor_test")
+        driver.find_element(By.NAME, "password").send_keys(EDITOR_PASSWORD)
+        driver.find_element(By.XPATH, "//button[@type='submit']").click()
+        wait.until(EC.url_to_be(f"{base_url}/"))
+        wait.until(EC.text_to_be_present_in_element((By.CLASS_NAME, "nav-user"), "editor_test"))
+
+        driver.get(f"{base_url}/projects/add/")
+        assert "403" in driver.title or "Forbidden" in driver.page_source
+        
+        driver.get(f"{base_url}/projects/{dummy_project_id}/update/")
+        wait.until(EC.presence_of_element_located((By.NAME, "title")))
+        print("[PASS] Otorisasi editor (403 di add, sukses di update) berhasil")
+
         driver.get(f"{base_url}/logout/")
         wait.until(EC.presence_of_element_located((By.XPATH, "//a[contains(@href, '/login/')]")))
         driver.get(f"{base_url}/login/")
@@ -92,7 +118,6 @@ def main():
         wait.until(EC.presence_of_element_located((By.CLASS_NAME, "project-form")))
         print("[PASS] Akses superuser ke form proyek berhasil")
 
-        # 5. Cek logout dan penghapusan cookie
         driver.get(f"{base_url}/logout/")
         wait.until(EC.presence_of_element_located((By.XPATH, "//a[contains(@href, '/login/')]")))
         cookie_last_login = driver.get_cookie("last_login")
