@@ -12,11 +12,12 @@
             <div class="education-header">
                 <h1>Education</h1>
                 {% if user.is_superuser %}
-                    <a href="{% url 'main:create_education' %}"
-                        class="button education-add-button">
-                        <span aria-hidden="true">+</span>
-                        Tambah Riwayat Pendidikan
-                    </a>
+                    <button type="button"
+                        class="button education-add-button"
+                        popovertarget="add-education-modal">
+                    <span aria-hidden="true">+</span>
+                    Tambah Riwayat Pendidikan
+                </button>
                 {% endif %}
             </div>
             <form id="education-search-form" class="education-search">
@@ -47,6 +48,10 @@
     </section>
 </main>
 
+{% if user.is_superuser %}
+    {% include "components/education_form_modal.html" %}
+{% endif %}
+
 <script>
     const BASE_EDUCATION_ENDPOINT = "{% url 'main:get_education_json' %}";
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
@@ -58,6 +63,8 @@
     const gridContainer = document.getElementById('grid');
     const searchForm = document.getElementById('education-search-form');
     const searchInput = document.getElementById('search-input');
+    const SEARCH_DEBOUNCE_DELAY = 300;
+    let searchDebounceTimer;
 
     function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
         loadingState.classList.toggle('hide', !showLoading);
@@ -121,6 +128,10 @@
         return articleElement;
     }
 
+    function closeEducationModal() {
+        document.getElementById("add-education-modal").hidePopover();
+    }
+
     async function fetchEducations(searchQuery = "") {
         if (educationAbortController) educationAbortController.abort();
         educationAbortController = new AbortController();
@@ -156,9 +167,22 @@
         }
     }
 
-    searchForm.addEventListener('submit', function(e) {
-        e.preventDefault(); 
-        fetchEducations(searchInput.value.trim()); 
+    function searchEducations() {
+        fetchEducations(searchInput.value.trim());
+    }
+
+    searchInput.addEventListener("input", function() {
+        clearTimeout(searchDebounceTimer);
+
+        searchDebounceTimer = setTimeout(function() {
+            searchEducations();
+        }, SEARCH_DEBOUNCE_DELAY);
+    });
+
+    searchForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+        clearTimeout(searchDebounceTimer);
+        searchEducations();
     });
 
     fetchEducations(searchInput.value.trim());

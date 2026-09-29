@@ -56,6 +56,7 @@ def show_experience(request):
         "name": "Rona",
         "title_query": title_query,
         "is_editor": is_editor(request.user),
+        "form": ExperienceForm()
     }
     return render(request, "experience.html", context)
 
@@ -149,6 +150,7 @@ def show_education(request):
         "name": "Rona",
         "institution_query": institution_query,
         "is_editor": is_editor(request.user),
+        "form": EducationForm(),
     }
     return render(request, "education.html", context)
 
