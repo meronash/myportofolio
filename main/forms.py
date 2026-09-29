@@ -53,17 +53,17 @@ class ProjectForm(ModelForm):
             ),
         }
 
-        def clean_title(self):
-            title = strip_tags(self.cleaned_data["title"]).strip()
-            if not title:
-                raise ValidationError("Nama proyek tidak boleh hanya berisi tag HTML.")
-            return title
+    def clean_title(self):
+        title = strip_tags(self.cleaned_data["title"]).strip()
+        if not title:
+            raise ValidationError("Nama proyek tidak boleh hanya berisi tag HTML.")
+        return title
 
-        def clean_tech_stack(self):
-            return strip_tags(self.cleaned_data["tech_stack"]).strip()
+    def clean_tech_stack(self):
+        return strip_tags(self.cleaned_data["tech_stack"]).strip()
 
-        def clean_description(self):
-            return strip_tags(self.cleaned_data["description"]).strip()
+    def clean_description(self):
+        return strip_tags(self.cleaned_data["description"]).strip()
 
 class EducationForm(ModelForm):
     class Meta:
@@ -113,6 +113,18 @@ class EducationForm(ModelForm):
                 }
             ),
         }
+
+    def clean_institution(self):
+        institution = strip_tags(self.cleaned_data["institution"]).strip()
+        if not institution:
+            raise ValidationError("Nama institusi tidak boleh kosong.")
+        return institution
+
+    def clean_degree(self):
+        return strip_tags(self.cleaned_data["degree"]).strip()
+
+    def clean_description(self):
+        return strip_tags(self.cleaned_data["description"]).strip()
 
 class ExperienceForm(ModelForm):
     class Meta:
@@ -164,3 +176,12 @@ class ExperienceForm(ModelForm):
                 }
             ),
         }
+
+    def clean_title(self):
+        title = strip_tags(self.cleaned_data["title"]).strip()
+        if not title:
+            raise ValidationError("Nama pengalaman tidak boleh kosong.")
+        return title
+
+    def clean_description(self):
+        return strip_tags(self.cleaned_data["description"]).strip()
