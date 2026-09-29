@@ -20,6 +20,9 @@ class Experience(models.Model):
     thumbnail = models.URLField(blank=True, null=True)
     started_at = models.DateField()
     ended_at = models.DateField(blank=True, null=True)
+    starred_by = models.ManyToManyField(
+            User, related_name="starred_experience", blank=True
+        )
     def __str__(self):
         return self.title
     
@@ -34,6 +37,9 @@ class Education(models.Model):
     degree = models.CharField(max_length=50)
     started_at = models.DateField()
     ended_at = models.DateField(blank=True, null=True)
+    starred_by = models.ManyToManyField(
+                User, related_name="starred_education", blank=True
+            )
     def __str__(self):
         return self.institution
      

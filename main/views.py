@@ -50,18 +50,10 @@ def create_experience(request):
     return render(request, "experience_form.html", context)
 
 def show_experience(request):
-    json_response = get_experience_json(request)
-
-    experience = serializers.deserialize(
-        "json",
-        json_response.content.decode("utf-8"),
-    )
-    experience = [ex.object for ex in experience]
     title_query = request.GET.get("title", "").strip()
 
     context = {
         "name": "Rona",
-        "experience_list": experience,
         "title_query": title_query,
         "is_editor": is_editor(request.user),
     }
@@ -69,13 +61,33 @@ def show_experience(request):
 
 def get_experience_json(request):
     title_query = request.GET.get("title", "").strip()
-    experience = Experience.objects.all()
+    experience = Experience.objects.prefetch_related('starred_by').all()
 
     if title_query:
         experience = experience.filter(title__icontains=title_query)
 
-    experience_json = serializers.serialize("json", experience)
-    return HttpResponse(experience_json, content_type="application/json")
+    data = []
+    for exp in experience:
+        starred_users = exp.starred_by.all()
+        is_starred = request.user in starred_users if request.user.is_authenticated else False
+        starred_by_names = ", ".join([u.username for u in starred_users])
+
+        data.append({
+            "pk": str(exp.id),
+            "fields": {
+                "title": exp.title,
+                "description": exp.description,
+                "category": exp.category,
+                "thumbnail": exp.thumbnail,
+                "started_at": exp.started_at,
+                "ended_at": exp.ended_at,
+                "star_count": starred_users.count(),
+                "is_starred": is_starred,
+                "starred_by_names": starred_by_names,
+            }
+        })
+
+    return JsonResponse(data, safe=False)
 
 @login_required(login_url="/login/")
 def delete_experience(request, experience_id):
@@ -131,18 +143,10 @@ def create_education(request):
     return render(request, "education_form.html", context)
 
 def show_education(request):
-    json_response = get_education_json(request)
-
-    education = serializers.deserialize(
-        "json",
-        json_response.content.decode("utf-8"),
-    )
-    education = [edu.object for edu in education]
     institution_query = request.GET.get("institution", "").strip()
 
     context = {
         "name": "Rona",
-        "education_list": education,
         "institution_query": institution_query,
         "is_editor": is_editor(request.user),
     }
@@ -150,13 +154,32 @@ def show_education(request):
 
 def get_education_json(request):
     institution_query = request.GET.get("institution", "").strip()
-    education = Education.objects.all()
+    education = Education.objects.prefetch_related('starred_by').all()
 
     if institution_query:
         education = education.filter(institution__icontains=institution_query)
 
-    education_json = serializers.serialize("json", education)
-    return HttpResponse(education_json, content_type="application/json")
+    data = []
+    for edu in education:
+        starred_users = edu.starred_by.all()
+        is_starred = request.user in starred_users if request.user.is_authenticated else False
+        starred_by_names = ", ".join([u.username for u in starred_users])
+
+        data.append({
+            "pk": str(edu.id),
+            "fields": {
+                "institution": edu.institution,
+                "description": edu.description,
+                "degree": edu.degree,
+                "started_at": edu.started_at,
+                "ended_at": edu.ended_at,
+                "star_count": starred_users.count(),
+                "is_starred": is_starred,
+                "starred_by_names": starred_by_names,
+            }
+        })
+
+    return JsonResponse(data, safe=False)
 
 @login_required(login_url="/login/")
 def delete_education(request, education_id):
@@ -330,6 +353,30 @@ def toggle_star(request, project_id):
             project.starred_by.add(request.user)
 
     return redirect("main:show_projects")
+
+@login_required(login_url="/login/")
+def toggle_star_experience(request, experience_id):
+    experience = get_object_or_404(Experience, pk=experience_id)
+
+    if request.method == "POST":
+        if request.user in experience.starred_by.all():
+            experience.starred_by.remove(request.user)
+        else:
+            experience.starred_by.add(request.user)
+
+    return redirect("main:show_experience")
+
+@login_required(login_url="/login/")
+def toggle_star_education(request, education_id):
+    education = get_object_or_404(Education, pk=education_id)
+
+    if request.method == "POST":
+        if request.user in education.starred_by.all():
+            education.starred_by.remove(request.user)
+        else:
+            education.starred_by.add(request.user)
+
+    return redirect("main:show_education")
 
 @require_POST
 def create_project_ajax(request):
