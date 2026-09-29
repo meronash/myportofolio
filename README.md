@@ -92,7 +92,7 @@ Saya memberikan potongan kode dan permasalahan yang muncul. AI kemudian breakdow
 Saya menggunakan ChatGPT untuk membantu pembuatan website portofolio ini dengan rincian sebagai berikut.
 
 ### Penggunaan AI
-1. Menjelaskan lebih lanjut mengenai Autentikasi pada Django
+1. Menjelaskan lebih lanjut mengenai AJAX, debouncing, fetch API, dan perlindungan dari XSS
 2. Membantu debugging
 3. Membantu menyelesaikan masalah desain css
 
