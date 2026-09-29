@@ -72,6 +72,15 @@
         gridContainer.classList.toggle('hide', !showGrid);
     }
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
     function buildExperienceCardElement(item) {
         const experience = item.fields;
         const experienceId = item.pk;
@@ -79,8 +88,8 @@
         const articleElement = document.createElement('article');
         articleElement.className = 'experience-card';
 
-        const imageHtml = experience.thumbnail 
-            ? `<img src="${experience.thumbnail}" alt="Gambar ${experience.title}" class="experience-image">`
+        const imageHtml = experience.thumbnail
+            ? `<img src="${escapeHtml(experience.thumbnail)}" alt="Gambar ${escapeHtml(experience.title)}" class="Experience-image">`
             : '';
 
         const statusText = experience.ended_at === null 
@@ -101,16 +110,15 @@
 
         const isStarredClass = experience.is_starred ? " is-starred" : "";
         const starText = experience.is_starred ? "Unstar" : "Star";
-        const starTitle = experience.star_count > 0 
-            ? `Dibintangi oleh ${experience.starred_by_names}` 
+        const starTitle = experience.star_count > 0
+            ? `Dibintangi oleh ${escapeHtml(experience.starred_by_names)}`
             : "Jadilah yang pertama memberi star";
 
         const completeCardHtml = `
             ${imageHtml}
-            <span class="experience-category">${experience.category}</span>
-            <h2>${experience.title}</h2>
-            <p class="experience-description">${experience.description}</p>
-            <p class="experience-status">${statusText}</p>
+            <h2>${escapeHtml(experience.title)}</h2>
+            <span class="experience-category">${escapeHtml(experience.category)}</span>
+            <p class="experience-description">${escapeHtml(experience.description)}</p
             <div class="experience-card-actions">
                 <div class="experience-actions">
                     
@@ -189,6 +197,61 @@
         clearTimeout(searchDebounceTimer);
         searchExperiences();
     });
+
+    const CREATE_EXPERIENCE_ENDPOINT = "{% url 'main:create_experience_ajax' %}";
+    const experienceForm = document.getElementById('experience-form');
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async function addExperience(event) {
+        event.preventDefault();
+
+        const submitButton = experienceForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+
+        try {
+            const response = await fetch(CREATE_EXPERIENCE_ENDPOINT, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: new FormData(experienceForm),
+            });
+            const result = await response.json().catch(() => ({}));
+
+            if (response.ok) {
+                experienceForm.reset();
+                closeExperienceModal();
+                showToast('Berhasil', 'Pengalaman baru berhasil ditambahkan!', 'success');
+                fetchExperiences(searchInput.value.trim());
+            } else {
+                const errorMessages = result.errors
+                    ? Object.values(result.errors).flat().map(error => error.message)
+                    : [result.message || `Terjadi kesalahan (status ${response.status}).`];
+                showToast('Gagal menambahkan pengalaman', errorMessages.join(' '), 'error');
+            }
+        } catch (error) {
+            console.error('Error adding experience:', error);
+            showToast('Gagal menambahkan pengalaman', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
+        } finally {
+            submitButton.disabled = false;
+        }
+    }
+
+    if (experienceForm) {
+        experienceForm.addEventListener('submit', addExperience);
+    }
 
     fetchExperiences(searchInput.value.trim());
 </script>

@@ -73,6 +73,15 @@
         gridContainer.classList.toggle('hide', !showGrid);
     }
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
     function buildEducationCardElement(item) {
         const education = item.fields;
         const educationId = item.pk;
@@ -98,15 +107,14 @@
 
         const isStarredClass = education.is_starred ? " is-starred" : "";
         const starText = education.is_starred ? "Unstar" : "Star";
-        const starTitle = education.star_count > 0 
-            ? `Dibintangi oleh ${education.starred_by_names}` 
+        const starTitle = education.star_count > 0
+            ? `Dibintangi oleh ${escapeHtml(education.starred_by_names)}`
             : "Jadilah yang pertama memberi star";
 
         const completeCardHtml = `
-            <span class="education-degree">${education.degree}</span>
-            <h2>${education.institution}</h2>
-            <p class="education-description">${education.description}</p>
-            <p class="education-status">${statusText}</p>
+            <h2>${escapeHtml(education.institution)}</h2>
+            <span class="education-degree">${escapeHtml(education.degree)}</span>
+            <p class="education-description">${escapeHtml(education.description)}</p>
             <div class="education-card-actions">
                 <div class="education-actions">
                     <form method="post" action="${starUrl}" class="star-form">
@@ -184,6 +192,61 @@
         clearTimeout(searchDebounceTimer);
         searchEducations();
     });
+
+    const CREATE_EDUCATION_ENDPOINT = "{% url 'main:create_education_ajax' %}";
+    const educationForm = document.getElementById('education-form');
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async function addEducation(event) {
+        event.preventDefault();
+
+        const submitButton = educationForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+
+        try {
+            const response = await fetch(CREATE_EDUCATION_ENDPOINT, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: new FormData(educationForm),
+            });
+            const result = await response.json().catch(() => ({}));
+
+            if (response.ok) {
+                educationForm.reset();
+                closeEducationModal();
+                showToast('Berhasil', 'Riwayat Pendidikan baru berhasil ditambahkan!', 'success');
+                fetchEducations(searchInput.value.trim());
+            } else {
+                const errorMessages = result.errors
+                    ? Object.values(result.errors).flat().map(error => error.message)
+                    : [result.message || `Terjadi kesalahan (status ${response.status}).`];
+                showToast('Gagal menambahkan riwayat pendidikan', errorMessages.join(' '), 'error');
+            }
+        } catch (error) {
+            console.error('Error adding project:', error);
+            showToast('Gagal menambahkan riwayat pendidikan', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
+        } finally {
+            submitButton.disabled = false;
+        }
+    }
+
+    if (educationForm) {
+        educationForm.addEventListener('submit', addEducation);
+    }
 
     fetchEducations(searchInput.value.trim());
 </script>
