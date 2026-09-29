@@ -82,3 +82,19 @@ Saya menggunakan ChatGPT untuk membantu pembuatan website portofolio ini dengan 
 
 ### Strategi Prompting
 Saya memberikan potongan kode dan permasalahan yang muncul. AI kemudian breakdown permasalahan tersebut dan saya mengevaluasi kembali output yang diberikan. 
+
+## Pertanyaan reflektif 5
+1. Debouncing adalah teknik yang digunakan untuk menunda eksekusi sebuah fungsi sampai jeda wakti tertentu telah berakhir sejak terakhir kali fungsi tersebut dipanggil. Pentingnya dalam penggunaan AJAX adalah untuk mencegah terjadinya overloading pada server, menghemat bandwidth, serta memberikan user experience yang lebih baik.
+2. fetch() berkerja secara asinkronus dan mengembalikan sebuah Promise dan await digunakan untuk menunggu sampai Promise tersebut selesai sebelum kode melanjutkan ke baris berikutnya. Jika tidak menggunakan await, fetch() yang bersifat asinkronus tadi akan langsung mengembalikan objek Promise yang berstatus pending dan bukan data respons yang sebenarnya. Program akan langsung mengeksekusi baris kode berikutnya sebelum jaringan selesai mengunduh data JSON, yang berujung pada error atau data gagal dirender.
+3. XSS adalah kerentanan keamanan di mana penyerang dapat menyuntikkan skrip berbahaya ke dalam halaman web yang dilihat oleh pengguna lain. Skrip ini dapat mencuri cookie, token sesi, atau membajak akun pengguna. Serangan XSS pada AJAX dan JavaScript lebih rentan dari Django Templates karena browser mengeksekusi string HTML secara mentah tanpa pengamanan otomatis. Sedangkan pada template Django secara default melakukan escaping terhadap variabel yang ditampilkan menggunakan {{variabel}}.  
+
+## Deklarasi AI
+Saya menggunakan ChatGPT untuk membantu pembuatan website portofolio ini dengan rincian sebagai berikut.
+
+### Penggunaan AI
+1. Menjelaskan lebih lanjut mengenai Autentikasi pada Django
+2. Membantu debugging
+3. Membantu menyelesaikan masalah desain css
+
+### Strategi Prompting
+Saya memberikan potongan kode dan permasalahan yang muncul. AI kemudian breakdown permasalahan tersebut dan saya mengevaluasi kembali output yang diberikan. 
