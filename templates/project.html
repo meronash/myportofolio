@@ -50,12 +50,14 @@
 
 {% if user.is_superuser %}
     {% include "components/project_form_modal.html" %}
+    {% include "components/project_update_modal.html" %}
 {% endif %}
 
 <script>
     const BASE_PROJECTS_ENDPOINT = "{% url 'main:get_projects_json' %}";
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
     let projectsAbortController;
+    let currentProjectsData = [];
 
     const loadingState = document.getElementById('loading');
     const errorState = document.getElementById('error');
@@ -109,6 +111,10 @@
             </form>`
             : '';
 
+        const updateHtml = IS_SUPERUSER 
+            ? `<button type="button" class="button button-secondary" onclick="openUpdateModal('${projectId}')">Update</button>`
+            : '';
+
         const isStarredClass = project.is_starred ? " is-starred" : "";
         const starText = project.is_starred ? "Unstar" : "Star";
         const starTitle = project.star_count > 0
@@ -134,8 +140,8 @@
                             <span class="star-count">${project.star_count}</span>
                         </button>
                     </form>
-
-                    ${deleteHtml}
+                    ${updateHtml}
+                    ${deleteHtml} 
                 </div>
             </div>
         `;
@@ -165,6 +171,7 @@
             if (!response.ok) throw new Error('Failed to fetch data');
 
             const projectData = await response.json();
+            currentProjectsData = projectData;
 
             if (projectData.length === 0) {
                 displayPageSection({ showEmpty: true });
@@ -253,6 +260,63 @@
 
     if (projectForm) {
         projectForm.addEventListener('submit', addProject);
+    }
+
+    function closeUpdateModal() {
+        document.getElementById("update-project-modal").hidePopover();
+    }
+
+    function openUpdateModal(projectId) {
+        const project = currentProjectsData.find(item => item.pk === projectId);
+        if (!project) return;
+
+        document.getElementById('update-id').value = projectId;
+        document.getElementById('id_update-title').value = project.fields.title;
+        document.getElementById('id_update-description').value = project.fields.description;
+        document.getElementById('id_update-tech_stack').value = project.fields.tech_stack;
+        document.getElementById('id_update-project_url').value = project.fields.project_url;
+        document.getElementById('id_update-project_image_url').value = project.fields.project_image_url;
+
+        document.getElementById("update-project-modal").showPopover();
+    }
+
+    const updateProjectForm = document.getElementById('update-project-form');
+    if (updateProjectForm) {
+        updateProjectForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const submitButton = updateProjectForm.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+
+            const projectId = document.getElementById('update-id').value;
+            const UPDATE_ENDPOINT = `/projects/update-ajax/${projectId}/`;
+
+            try {
+                const response = await fetch(UPDATE_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                    body: new FormData(updateProjectForm),
+                });
+                
+                const result = await response.json().catch(() => ({}));
+
+                if (response.ok) {
+                    updateProjectForm.reset();
+                    closeUpdateModal();
+                    showToast('Berhasil', 'Proyek berhasil diperbarui!', 'success');
+                    fetchProjects(searchInput.value.trim()); 
+                } else {
+                    const errorMessages = result.errors
+                        ? Object.values(result.errors).flat().map(error => error.message)
+                        : [result.message || `Terjadi kesalahan (status ${response.status}).`];
+                    showToast('Gagal update proyek', errorMessages.join(' '), 'error');
+                }
+            } catch (error) {
+                console.error('Error updating project:', error);
+                showToast('Gagal', 'Tidak dapat terhubung ke server.', 'error');
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
     }
 
     fetchProjects(searchInput.value.trim());

@@ -50,12 +50,14 @@
 
 {% if user.is_superuser %}
     {% include "components/education_form_modal.html" %}
+    {% include "components/education_update_modal.html" %}
 {% endif %}
 
 <script>
     const BASE_EDUCATION_ENDPOINT = "{% url 'main:get_education_json' %}";
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
     let educationAbortController;
+    let currentEducationData = [];
 
     const loadingState = document.getElementById('loading');
     const errorState = document.getElementById('error');
@@ -103,6 +105,10 @@
                 {% csrf_token %}
                 <button type="submit" class="button button-danger" onclick="return confirm('Yakin ingin menghapus riwayat ini?');">Hapus</button>
             </form>`
+            : '';
+
+            const updateHtml = IS_SUPERUSER 
+            ? `<button type="button" class="button button-secondary" onclick="openUpdateModal('${educationId}')">Update</button>`
             : '';
 
         const isStarredClass = education.is_starred ? " is-starred" : "";
@@ -157,6 +163,7 @@
             if (!response.ok) throw new Error('Failed to fetch data');
 
             const educationData = await response.json();
+            currentEducationData = educationData;
 
             if (educationData.length === 0) {
                 displayPageSection({ showEmpty: true });
@@ -246,6 +253,63 @@
 
     if (educationForm) {
         educationForm.addEventListener('submit', addEducation);
+    }
+
+    function closeUpdateModal() {
+        document.getElementById("update-education-modal").hidePopover();
+    }
+
+    function openUpdateModal(educationId) {
+        const education = currentEducationData.find(item => item.pk === educationId);
+        if (!education) return;
+
+        document.getElementById('update-id').value = educationId;
+        document.getElementById('id_update-institution').value = education.fields.institution;
+        document.getElementById('id_update-degree').value = education.fields.degree;
+        document.getElementById('id_update-description').value = education.fields.description;
+        document.getElementById('id_update-started_at').value = education.fields.started_at;
+        document.getElementById('id_update-ended_at').value = education.fields.ended_at;
+
+        document.getElementById("update-education-modal").showPopover();
+    }
+
+    const updateExperienceForm = document.getElementById('update-education-form');
+    if (updateExperienceForm) {
+        updateExperienceForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const submitButton = updateExperienceForm.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+
+            const educationId = document.getElementById('update-id').value;
+            const UPDATE_ENDPOINT = `/education/update-ajax/${educationId}/`;
+
+            try {
+                const response = await fetch(UPDATE_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                    body: new FormData(updateExperienceForm),
+                });
+                
+                const result = await response.json().catch(() => ({}));
+
+                if (response.ok) {
+                    updateExperienceForm.reset();
+                    closeUpdateModal();
+                    showToast('Berhasil', 'Proyek berhasil diperbarui!', 'success');
+                    fetchEducations(searchInput.value.trim()); 
+                } else {
+                    const errorMessages = result.errors
+                        ? Object.values(result.errors).flat().map(error => error.message)
+                        : [result.message || `Terjadi kesalahan (status ${response.status}).`];
+                    showToast('Gagal update pengalaman', errorMessages.join(' '), 'error');
+                }
+            } catch (error) {
+                console.error('Error updating education:', error);
+                showToast('Gagal', 'Tidak dapat terhubung ke server.', 'error');
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
     }
 
     fetchEducations(searchInput.value.trim());

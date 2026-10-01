@@ -49,12 +49,14 @@
 
 {% if user.is_superuser %}
     {% include "components/experience_form_modal.html" %}
+    {% include "components/experience_update_modal.html" %}
 {% endif %}
 
 <script>
     const BASE_EXPERIENCE_ENDPOINT = "{% url 'main:get_experience_json' %}";
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
     let experienceAbortController;
+    let currentExperiencesData = [];
 
     const loadingState = document.getElementById('loading');
     const errorState = document.getElementById('error');
@@ -108,6 +110,10 @@
             </form>`
             : '';
 
+        const updateHtml = IS_SUPERUSER 
+            ? `<button type="button" class="button button-secondary" onclick="openUpdateModal('${experienceId}')">Update</button>`
+            : '';
+
         const isStarredClass = experience.is_starred ? " is-starred" : "";
         const starText = experience.is_starred ? "Unstar" : "Star";
         const starTitle = experience.star_count > 0
@@ -132,7 +138,7 @@
                             <span class="star-count">${experience.star_count}</span>
                         </button>
                     </form>
-
+                    ${updateHtml}
                     ${deleteHtml}
                 </div>
             </div>
@@ -163,6 +169,7 @@
             if (!response.ok) throw new Error('Failed to fetch data');
 
             const experienceData = await response.json();
+            currentExperiencesData = experienceData;
 
             if (experienceData.length === 0) {
                 displayPageSection({ showEmpty: true });
@@ -251,6 +258,64 @@
 
     if (experienceForm) {
         experienceForm.addEventListener('submit', addExperience);
+    }
+
+    function closeUpdateModal() {
+        document.getElementById("update-experience-modal").hidePopover();
+    }
+
+    function openUpdateModal(experienceId) {
+        const experience = currentExperiencesData.find(item => item.pk === experienceId);
+        if (!experience) return;
+
+        document.getElementById('update-id').value = experienceId;
+document.getElementById('id_update-title').value = experience.fields.title;
+document.getElementById('id_update-category').value = experience.fields.category;
+document.getElementById('id_update-description').value = experience.fields.description;
+document.getElementById('id_update-started_at').value = experience.fields.started_at;
+document.getElementById('id_update-ended_at').value = experience.fields.ended_at;
+document.getElementById('id_update-thumbnail').value = experience.fields.thumbnail;
+
+        document.getElementById("update-experience-modal").showPopover();
+    }
+
+    const updateExperienceForm = document.getElementById('update-experience-form');
+    if (updateExperienceForm) {
+        updateExperienceForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const submitButton = updateExperienceForm.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+
+            const experienceId = document.getElementById('update-id').value;
+            const UPDATE_ENDPOINT = `/experience/update-ajax/${experienceId}/`;
+
+            try {
+                const response = await fetch(UPDATE_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                    body: new FormData(updateExperienceForm),
+                });
+                
+                const result = await response.json().catch(() => ({}));
+
+                if (response.ok) {
+                    updateExperienceForm.reset();
+                    closeUpdateModal();
+                    showToast('Berhasil', 'Proyek berhasil diperbarui!', 'success');
+                    fetchExperiences(searchInput.value.trim()); 
+                } else {
+                    const errorMessages = result.errors
+                        ? Object.values(result.errors).flat().map(error => error.message)
+                        : [result.message || `Terjadi kesalahan (status ${response.status}).`];
+                    showToast('Gagal update pengalaman', errorMessages.join(' '), 'error');
+                }
+            } catch (error) {
+                console.error('Error updating experience:', error);
+                showToast('Gagal', 'Tidak dapat terhubung ke server.', 'error');
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
     }
 
     fetchExperiences(searchInput.value.trim());

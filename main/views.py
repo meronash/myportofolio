@@ -31,24 +31,6 @@ def show_main(request):
     }
     return render(request, "index.html", context)
 
-@login_required(login_url="/login/")
-def create_experience(request):
-    if not request.user.is_superuser:
-        raise PermissionDenied
-    
-    form = ExperienceForm(request.POST or None)
-
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Pengalaman baru berhasil ditambahkan!")
-        return redirect("main:show_experience")
-
-    context = {
-        "name": "Rona",
-        "form": form,
-    }
-    return render(request, "experience_form.html", context)
-
 def show_experience(request):
     title_query = request.GET.get("title", "").strip()
 
@@ -56,7 +38,8 @@ def show_experience(request):
         "name": "Rona",
         "title_query": title_query,
         "is_editor": is_editor(request.user),
-        "form": ExperienceForm()
+        "form": ExperienceForm(),
+        "update_form": ExperienceForm(prefix="update"),
     }
     return render(request, "experience.html", context)
 
@@ -104,45 +87,6 @@ def delete_experience(request, experience_id):
 
     return redirect("main:show_experience")
 
-@login_required(login_url="/login/")
-def update_experience(request, experience_id):
-    if not request.user.is_superuser and not is_editor(request.user):
-        raise PermissionDenied
-
-    experience = get_object_or_404(Experience, pk=experience_id)
-    form = ExperienceForm(request.POST or None, instance=experience)
-
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Pengalaman berhasil diperbarui!")
-        return redirect("main:show_experience")
-
-    context = {
-        "name": "Rona",
-        "form": form,
-        "experience": experience,
-    }
-
-    return render(request, "experience_form.html", context)
-
-@login_required(login_url="/login/")
-def create_education(request):
-    if not request.user.is_superuser:
-        raise PermissionDenied
-    
-    form = EducationForm(request.POST or None)
-
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Riwayat Pendidikan baru berhasil ditambahkan!")
-        return redirect("main:show_education")
-
-    context = {
-        "name": "Rona",
-        "form": form,
-    }
-    return render(request, "education_form.html", context)
-
 def show_education(request):
     institution_query = request.GET.get("institution", "").strip()
 
@@ -151,6 +95,7 @@ def show_education(request):
         "institution_query": institution_query,
         "is_editor": is_editor(request.user),
         "form": EducationForm(),
+        "update_form": EducationForm(prefix="update"),
     }
     return render(request, "education.html", context)
 
@@ -197,45 +142,6 @@ def delete_education(request, education_id):
 
     return redirect("main:show_education")
 
-@login_required(login_url="/login/")
-def update_education(request, education_id):
-    if not request.user.is_superuser and not is_editor(request.user):
-        raise PermissionDenied
-
-    education = get_object_or_404(Education, pk=education_id)
-    form = EducationForm(request.POST or None, instance=education)
-
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Riwayat Pendidikan berhasil diperbarui!")
-        return redirect("main:show_education")
-
-    context = {
-        "name": "Rona",
-        "form": form,
-        "education": education,
-    }
-
-    return render(request, "education_form.html", context)
-
-@login_required(login_url="/login/")
-def create_project(request):
-    if not request.user.is_superuser:
-        raise PermissionDenied
-
-    form = ProjectForm(request.POST or None)
-
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Proyek baru berhasil ditambahkan!")
-        return redirect("main:show_projects")
-
-    context = {
-        "name": "Rona",
-        "form": form,
-    }
-    return render(request, "projects_form.html", context)
-
 def show_projects(request):
     title_query = request.GET.get("title", "").strip()
 
@@ -243,6 +149,7 @@ def show_projects(request):
         "name": "Burhan",
         "title_query": title_query,
         "form": ProjectForm(),
+        "update_form": ProjectForm(prefix="update"),
     }
     return render(request, "project.html", context)
 
@@ -288,25 +195,6 @@ def delete_project(request, project_id):
         return redirect("main:show_projects")
 
     return redirect("main:show_projects")
-
-@login_required(login_url="/login/")
-def update_project(request, project_id):
-    if not request.user.is_superuser and not is_editor(request.user):
-        raise PermissionDenied
-
-    project = get_object_or_404(Project, pk=project_id)
-    form = ProjectForm(request.POST or None, instance=project)
-
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Project berhasil diperbarui!")
-        return redirect("main:show_projects")
-    context = {
-        "name": "Rona",
-        "form": form,
-        "project": project,
-    }
-    return render(request, "projects_form.html", context)
 
 def register(request):
     form = UserCreationForm(request.POST or None)
@@ -398,6 +286,22 @@ def create_project_ajax(request):
 
     return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
+@require_POST
+def update_project_ajax(request, project_id):
+    if not request.user.is_superuser and not is_editor(request.user):
+        return JsonResponse(
+            {"message": "Anda tidak memiliki izin untuk mengedit proyek ini."},
+            status=403,
+        )
+
+    project = get_object_or_404(Project, pk=project_id)
+
+    form = ProjectForm(request.POST, instance=project, prefix="update")
+    if form.is_valid():
+        form.save()
+        return JsonResponse({"message": "Proyek berhasil diperbarui."}, status=200)
+
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 @require_POST
 def create_experience_ajax(request):
@@ -418,6 +322,23 @@ def create_experience_ajax(request):
     return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 @require_POST
+def update_experience_ajax(request, experience_id):
+    if not request.user.is_superuser and not is_editor(request.user):
+        return JsonResponse(
+            {"message": "Anda tidak memiliki izin untuk mengedit pengalaman ini."},
+            status=403,
+        )
+
+    experience = get_object_or_404(Experience, pk=experience_id)
+
+    form = ExperienceForm(request.POST, instance=experience, prefix="update")
+    if form.is_valid():
+        form.save()
+        return JsonResponse({"message": "Pengalaman berhasil diperbarui."}, status=200)
+
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+
+@require_POST
 def create_education_ajax(request):
     if not request.user.is_superuser:
         return JsonResponse(
@@ -432,5 +353,22 @@ def create_education_ajax(request):
             {"message": "Riwayat pendidikan berhasil ditambahkan.", "pk": str(education.id)},
             status=201,
         )
+
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+
+@require_POST
+def update_education_ajax(request, education_id):
+    if not request.user.is_superuser and not is_editor(request.user):
+        return JsonResponse(
+            {"message": "Anda tidak memiliki izin untuk mengedit riwayat pendidikan ini."},
+            status=403,
+        )
+
+    education = get_object_or_404(Education, pk=education_id)
+
+    form = EducationForm(request.POST, instance=education, prefix="update")
+    if form.is_valid():
+        form.save()
+        return JsonResponse({"message": "Riwayat pendidikan berhasil diperbarui."}, status=200)
 
     return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
