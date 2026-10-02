@@ -136,6 +136,7 @@
                             <span class="star-count">${education.star_count}</span>
                         </button>
                     </form>
+                    ${updateHtml}
                     ${deleteHtml}
                 </div>
             </div>
@@ -328,13 +329,13 @@
                 if (response.ok) {
                     updateExperienceForm.reset();
                     closeUpdateModal();
-                    showToast('Berhasil', 'Proyek berhasil diperbarui!', 'success');
+                    showToast('Berhasil', 'Riwayat Pendidikan berhasil diperbarui!', 'success');
                     fetchEducations(searchInput.value.trim()); 
                 } else {
                     const errorMessages = result.errors
                         ? Object.values(result.errors).flat().map(error => error.message)
                         : [result.message || `Terjadi kesalahan (status ${response.status}).`];
-                    showToast('Gagal update pengalaman', errorMessages.join(' '), 'error');
+                    showToast('Gagal update riwayat pendidikan', errorMessages.join(' '), 'error');
                 }
             } catch (error) {
                 console.error('Error updating education:', error);
