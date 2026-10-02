@@ -334,7 +334,7 @@ document.getElementById('id_update-thumbnail').value = experience.fields.thumbna
                 if (response.ok) {
                     updateExperienceForm.reset();
                     closeUpdateModal();
-                    showToast('Berhasil', 'Proyek berhasil diperbarui!', 'success');
+                    showToast('Berhasil', 'Pengalaman berhasil diperbarui!', 'success');
                     fetchExperiences(searchInput.value.trim()); 
                 } else {
                     const errorMessages = result.errors
