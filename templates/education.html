@@ -51,6 +51,7 @@
 {% if user.is_superuser %}
     {% include "components/education_form_modal.html" %}
     {% include "components/education_update_modal.html" %}
+    {% include "components/education_delete_modal.html" %}
 {% endif %}
 
 <script>
@@ -58,6 +59,7 @@
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
     let educationAbortController;
     let currentEducationData = [];
+    let currentDeleteUrl = "";
 
     const loadingState = document.getElementById('loading');
     const errorState = document.getElementById('error');
@@ -95,16 +97,17 @@
             ? "Sedang berlangsung" 
             : "Selesai";
         
-        const deleteUrl = "{% url 'main:delete_education' '00000000-0000-0000-0000-000000000000' %}"
+        const deleteUrl = "{% url 'main:delete_education_ajax' '00000000-0000-0000-0000-000000000000' %}"
             .replace('00000000-0000-0000-0000-000000000000', educationId);
         const starUrl = "{% url 'main:toggle_star_education' '00000000-0000-0000-0000-000000000000' %}"
             .replace('00000000-0000-0000-0000-000000000000', educationId);
 
         const deleteHtml = IS_SUPERUSER 
-            ? `<form method="post" action="${deleteUrl}" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="button button-danger" onclick="return confirm('Yakin ingin menghapus riwayat ini?');">Hapus</button>
-            </form>`
+            ? `<button type="button" 
+                       class="button button-danger" 
+                       onclick="openDeleteEducationModal('${deleteUrl}', '${escapeHtml(education.institution)}')">
+                   Hapus
+               </button>`
             : '';
 
             const updateHtml = IS_SUPERUSER 
@@ -144,6 +147,36 @@
 
     function closeEducationModal() {
         document.getElementById("add-education-modal").hidePopover();
+    }
+
+    function openDeleteEducationModal(url, eduName) {
+        currentDeleteUrl = url;
+        document.getElementById('delete-education-name').textContent = eduName; 
+        document.getElementById('delete-education-modal').showPopover();
+    }
+
+    const confirmDeleteEduBtn = document.getElementById('confirm-delete-education-btn');
+    if (confirmDeleteEduBtn) {
+        confirmDeleteEduBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            try {
+                const response = await fetch(currentDeleteUrl, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+                });
+                if (response.ok) {
+                    document.getElementById('delete-education-modal').hidePopover();
+                    showToast('Berhasil', 'Riwayat berhasil dihapus!', 'success');
+                    fetchEducations(searchInput.value.trim());
+                } else {
+                    showToast('Gagal', 'Terjadi kesalahan.', 'error');
+                }
+            } catch (error) {
+                showToast('Gagal', 'Tidak dapat terhubung ke server.', 'error');
+            } finally {
+                this.disabled = false;
+            }
+        });
     }
 
     async function fetchEducations(searchQuery = "") {

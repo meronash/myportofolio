@@ -51,6 +51,7 @@
 {% if user.is_superuser %}
     {% include "components/project_form_modal.html" %}
     {% include "components/project_update_modal.html" %}
+    {% include "components/project_delete_modal.html" %}
 {% endif %}
 
 <script>
@@ -58,6 +59,7 @@
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
     let projectsAbortController;
     let currentProjectsData = [];
+    let currentDeleteUrl = "";
 
     const loadingState = document.getElementById('loading');
     const errorState = document.getElementById('error');
@@ -99,16 +101,17 @@
             ? `<a href="${escapeHtml(project.project_url)}" class="button">Lihat Project</a>`
             : '';
 
-        const deleteUrl = "{% url 'main:delete_project' '00000000-0000-0000-0000-000000000000' %}"
+        const deleteUrl = "{% url 'main:delete_project_ajax' '00000000-0000-0000-0000-000000000000' %}"
             .replace('00000000-0000-0000-0000-000000000000', projectId);
         const starUrl = "{% url 'main:toggle_star' '00000000-0000-0000-0000-000000000000' %}"
             .replace('00000000-0000-0000-0000-000000000000', projectId);
 
         const deleteHtml = IS_SUPERUSER 
-            ? `<form method="post" action="${deleteUrl}" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="button button-danger" onclick="return confirm('Yakin ingin menghapus project ini?');">Hapus</button>
-            </form>`
+            ? `<button type="button" 
+                       class="button button-danger" 
+                       onclick="openDeleteProjectModal('${deleteUrl}', '${escapeHtml(project.title)}')">
+                   Hapus
+               </button>`
             : '';
 
         const updateHtml = IS_SUPERUSER 
@@ -152,6 +155,41 @@
 
     function closeProjectModal() {
         document.getElementById("add-project-modal").hidePopover();
+    }
+
+    function openDeleteProjectModal(url, projectName) {
+        currentDeleteUrl = url;
+        document.getElementById('delete-project-name').textContent = projectName; 
+        document.getElementById('delete-project-modal').showPopover();
+    }
+
+    const confirmDeleteBtn = document.getElementById('confirm-delete-project-btn');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            
+            try {
+                const response = await fetch(currentDeleteUrl, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+                });
+                
+                const result = await response.json().catch(() => ({}));
+
+                if (response.ok) {
+                    document.getElementById('delete-project-modal').hidePopover();
+                    showToast('Berhasil', result.message || 'Proyek berhasil dihapus!', 'success');
+                    fetchProjects(searchInput.value.trim());
+                } else {
+                    showToast('Gagal', result.message || 'Terjadi kesalahan.', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting project:', error);
+                showToast('Gagal', 'Tidak dapat terhubung ke server.', 'error');
+            } finally {
+                this.disabled = false;
+            }
+        });
     }
 
     async function fetchProjects(searchQuery = "") {

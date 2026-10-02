@@ -1,43 +1,35 @@
-<p class="education-delete">
-    <button type="button"
-            class="button button-danger"
-            popovertarget="delete-education-{{ education.id }}"
-            aria-label="Hapus {{ education.institution }}"
-            institution="Hapus Riwayat Pendidikan">
-        Hapus Riwayat
-    </button>
-</p>
-<div id="delete-education-{{ education.id }}"
+<div id="delete-education-modal"
      class="education-delete-modal"
      popover="auto"
      role="dialog"
      aria-modal="true"
-     aria-labelledby="delete-education-title-{{ education.id }}">
+     aria-labelledby="delete-education-title">
+    
     <button type="button"
             class="education-delete-modal__backdrop"
-            popovertarget="delete-education-{{ education.id }}"
+            popovertarget="delete-education-modal"
             popovertargetaction="hide"
             aria-label="Tutup konfirmasi hapus"></button>
+    
     <div class="education-delete-modal__content">
         <button type="button"
                 class="education-delete-modal__close"
-                popovertarget="delete-education-{{ education.id }}"
+                popovertarget="delete-education-modal"
                 popovertargetaction="hide"
                 aria-label="Tutup konfirmasi hapus">×</button>
-        <h2 id="delete-education-title-{{ education.id }}">Hapus Riwayat Pendidikan?</h2>
+        
+        <h2 id="delete-education-title">Hapus Riwayat Pendidikan?</h2>
         <p>
             Apakah Anda yakin ingin menghapus
-            <strong>{{ education.institution }}</strong>?
+            <strong id="delete-education-name"></strong>?
         </p>
+        
         <div class="education-delete-modal__actions">
             <button type="button"
                     class="button button-secondary"
-                    popovertarget="delete-education-{{ education.id }}"
+                    popovertarget="delete-education-modal"
                     popovertargetaction="hide">Batal</button>
-            <form method="post" action="{% url 'main:delete_education' education.id %}">
-                {% csrf_token %}
-                <button type="submit" class="button button-danger">Ya, Hapus</button>
-            </form>
+            <button type="button" id="confirm-delete-education-btn" class="button button-danger">Ya, Hapus</button>
         </div>
     </div>
 </div>

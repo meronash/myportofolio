@@ -73,20 +73,6 @@ def get_experience_json(request):
 
     return JsonResponse(data, safe=False)
 
-@login_required(login_url="/login/")
-def delete_experience(request, experience_id):
-    if not request.user.is_superuser:
-        raise PermissionDenied
-    
-    experience = get_object_or_404(Experience, pk=experience_id)
-
-    if request.method == "POST":
-        experience.delete()
-        messages.success(request, "Pengalaman berhasil dihapus!")
-        return redirect("main:show_experience")
-
-    return redirect("main:show_experience")
-
 def show_education(request):
     institution_query = request.GET.get("institution", "").strip()
 
@@ -128,20 +114,6 @@ def get_education_json(request):
 
     return JsonResponse(data, safe=False)
 
-@login_required(login_url="/login/")
-def delete_education(request, education_id):
-    if not request.user.is_superuser:
-        raise PermissionDenied
-    
-    education = get_object_or_404(Education, pk=education_id)
-
-    if request.method == "POST":
-        education.delete()
-        messages.success(request, "Riwayat Pendidikan berhasil dihapus!")
-        return redirect("main:show_education")
-
-    return redirect("main:show_education")
-
 def show_projects(request):
     title_query = request.GET.get("title", "").strip()
 
@@ -181,20 +153,6 @@ def get_projects_json(request):
         })
 
     return JsonResponse(data, safe=False)
-
-@login_required(login_url="/login/")
-def delete_project(request, project_id):
-    if not request.user.is_superuser:
-        raise PermissionDenied
-
-    project = get_object_or_404(Project, pk=project_id)
-
-    if request.method == "POST":
-        project.delete()
-        messages.success(request, "Project berhasil dihapus!")
-        return redirect("main:show_projects")
-
-    return redirect("main:show_projects")
 
 def register(request):
     form = UserCreationForm(request.POST or None)
@@ -304,6 +262,15 @@ def update_project_ajax(request, project_id):
     return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 @require_POST
+def delete_project_ajax(request, project_id):
+    if not request.user.is_superuser:
+        return JsonResponse({"message" : "Tidak memiliki izin untuk menghapus proyek."}, status=403)
+
+    project = get_object_or_404(Project, pk=project_id)
+    project.delete()
+    return JsonResponse({"message" : "Proyek berhasil dihapus!"}, status=200)
+
+@require_POST
 def create_experience_ajax(request):
     if not request.user.is_superuser:
         return JsonResponse(
@@ -339,6 +306,15 @@ def update_experience_ajax(request, experience_id):
     return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 @require_POST
+def delete_experience_ajax(request, experience_id):
+    if not request.user.is_superuser:
+        return JsonResponse({"message" : "Tidak memiliki izin untuk menghapus pengalaman."}, status=403)
+
+    experience = get_object_or_404(Experience, pk=experience_id)
+    experience.delete()
+    return JsonResponse({"message" : "Pengalaman berhasil dihapus!"}, status=200)
+
+@require_POST
 def create_education_ajax(request):
     if not request.user.is_superuser:
         return JsonResponse(
@@ -372,3 +348,12 @@ def update_education_ajax(request, education_id):
         return JsonResponse({"message": "Riwayat pendidikan berhasil diperbarui."}, status=200)
 
     return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+
+@require_POST
+def delete_education_ajax(request, education_id):
+    if not request.user.is_superuser:
+        return JsonResponse({"message" : "Tidak memiliki izin untuk menghapus riwayat pendidikan."}, status=403)
+
+    education = get_object_or_404(Education, pk=education_id)
+    education.delete()
+    return JsonResponse({"message" : "Riwayat pendidikan berhasil dihapus!"}, status=200)

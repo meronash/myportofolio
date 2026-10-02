@@ -20,7 +20,6 @@
         <h2 id="add-experience-modal-title">Tambah Pengalaman Baru</h2>
         <form id="experience-form"
               method="post"
-              action="{% url 'main:create_experience' %}"
               class="experience-form">
             {% csrf_token %}
             {% for field in form %}
