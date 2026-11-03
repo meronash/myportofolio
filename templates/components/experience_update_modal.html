@@ -8,16 +8,16 @@
             class="experience-form-modal__backdrop"
             popovertarget="update-experience-modal"
             popovertargetaction="hide"
-            aria-label="Tutup form update pengalaman"></button>
+            aria-label="Close experience update form"></button>
 
     <div class="experience-form-modal__content">
         <button type="button"
                 class="experience-form-modal__close"
                 popovertarget="update-experience-modal"
                 popovertargetaction="hide"
-                aria-label="Tutup form update pengalaman">×</button>
+                aria-label="Close experience update form">×</button>
 
-        <h2 id="update-experience-modal-title">Update Pengalaman</h2>
+        <h2 id="update-experience-modal-title">Update Experience</h2>
         <form id="update-experience-form" class="experience-form">
             <input type="hidden" id="update-id" name="id">
             
@@ -29,8 +29,8 @@
             {% endfor %}
             
             <div class="experience-form-modal__actions">
-                <button type="button" class="button button-secondary" popovertarget="update-experience-modal" popovertargetaction="hide">Batal</button>
-                <button type="submit" class="button button-warning">Simpan Perubahan</button>
+                <button type="button" class="button button-secondary" popovertarget="update-experience-modal" popovertargetaction="hide">Cancel</button>
+                <button type="submit" class="button button-warning">Save Changes</button>
             </div>
         </form>
     </div>

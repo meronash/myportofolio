@@ -18,14 +18,14 @@ def is_editor(user):
     return user.groups.filter(name="Editor").exists()
 
 def show_main(request):
-    last_login = request.COOKIES.get('last_login', 'Belum ada sesi login / Cookie tidak ditemukan')
+    last_login = request.COOKIES.get('last_login', 'No login session / cookie found')
     context = {
         "name": "Rona Mahira",
         "npm": "2506657314",
-        "study_program": "S1 Sistem Informasi",
+        "study_program": "Bachelor of Information Systems",
         "bio": (
             "Hi! I'm an Information Systems student at Universitas Indonesia "
-            "passionate aboout Game Development and Animation."
+            "passionate about Game Development and Animation."
         ),
         "last_login" : last_login,
     }
@@ -159,7 +159,7 @@ def register(request):
 
     if request.method == "POST" and form.is_valid():
         form.save()
-        messages.success(request, "Akun berhasil dibuat. Silakan login.")
+        messages.success(request, "Account created successfully. Please log in.")
         return redirect("main:login")
 
     context = {
@@ -230,7 +230,7 @@ def toggle_star_education(request, education_id):
 def create_project_ajax(request):
     if not request.user.is_superuser:
         return JsonResponse(
-            {"message": "Hanya pemilik portofolio yang dapat menambahkan proyek."},
+            {"message": "Only the portfolio owner can add projects."},
             status=403,
         )
 
@@ -238,7 +238,7 @@ def create_project_ajax(request):
     if form.is_valid():
         project = form.save()
         return JsonResponse(
-            {"message": "Proyek berhasil ditambahkan.", "pk": str(project.id)},
+            {"message": "Project added successfully.", "pk": str(project.id)},
             status=201,
         )
 
@@ -248,7 +248,7 @@ def create_project_ajax(request):
 def update_project_ajax(request, project_id):
     if not request.user.is_superuser and not is_editor(request.user):
         return JsonResponse(
-            {"message": "Anda tidak memiliki izin untuk mengedit proyek ini."},
+            {"message": "You do not have permission to edit this project."},
             status=403,
         )
 
@@ -257,24 +257,24 @@ def update_project_ajax(request, project_id):
     form = ProjectForm(request.POST, instance=project, prefix="update")
     if form.is_valid():
         form.save()
-        return JsonResponse({"message": "Proyek berhasil diperbarui."}, status=200)
+        return JsonResponse({"message": "Project updated successfully."}, status=200)
 
     return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 @require_POST
 def delete_project_ajax(request, project_id):
     if not request.user.is_superuser:
-        return JsonResponse({"message" : "Tidak memiliki izin untuk menghapus proyek."}, status=403)
+        return JsonResponse({"message" : "You do not have permission to delete this project."}, status=403)
 
     project = get_object_or_404(Project, pk=project_id)
     project.delete()
-    return JsonResponse({"message" : "Proyek berhasil dihapus!"}, status=200)
+    return JsonResponse({"message" : "Project deleted successfully!"}, status=200)
 
 @require_POST
 def create_experience_ajax(request):
     if not request.user.is_superuser:
         return JsonResponse(
-            {"message": "Hanya pemilik portofolio yang dapat menambahkan pengalaman."},
+            {"message": "Only the portfolio owner can add experiences."},
             status=403,
         )
 
@@ -282,7 +282,7 @@ def create_experience_ajax(request):
     if form.is_valid():
         experience = form.save()
         return JsonResponse(
-            {"message": "Pengalaman berhasil ditambahkan.", "pk": str(experience.id)},
+            {"message": "Experience added successfully.", "pk": str(experience.id)},
             status=201,
         )
 
@@ -292,7 +292,7 @@ def create_experience_ajax(request):
 def update_experience_ajax(request, experience_id):
     if not request.user.is_superuser and not is_editor(request.user):
         return JsonResponse(
-            {"message": "Anda tidak memiliki izin untuk mengedit pengalaman ini."},
+            {"message": "You do not have permission to edit this experience."},
             status=403,
         )
 
@@ -301,24 +301,24 @@ def update_experience_ajax(request, experience_id):
     form = ExperienceForm(request.POST, instance=experience, prefix="update")
     if form.is_valid():
         form.save()
-        return JsonResponse({"message": "Pengalaman berhasil diperbarui."}, status=200)
+        return JsonResponse({"message": "Experience updated successfully."}, status=200)
 
     return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 @require_POST
 def delete_experience_ajax(request, experience_id):
     if not request.user.is_superuser:
-        return JsonResponse({"message" : "Tidak memiliki izin untuk menghapus pengalaman."}, status=403)
+        return JsonResponse({"message" : "You do not have permission to delete experiences."}, status=403)
 
     experience = get_object_or_404(Experience, pk=experience_id)
     experience.delete()
-    return JsonResponse({"message" : "Pengalaman berhasil dihapus!"}, status=200)
+    return JsonResponse({"message" : "Experience deleted successfully!"}, status=200)
 
 @require_POST
 def create_education_ajax(request):
     if not request.user.is_superuser:
         return JsonResponse(
-            {"message": "Hanya pemilik portofolio yang dapat menambahkan riwayat pendidikan."},
+            {"message": "Only the portfolio owner can add education records."},
             status=403,
         )
 
@@ -326,7 +326,7 @@ def create_education_ajax(request):
     if form.is_valid():
         education = form.save()
         return JsonResponse(
-            {"message": "Riwayat pendidikan berhasil ditambahkan.", "pk": str(education.id)},
+            {"message": "Education record added successfully.", "pk": str(education.id)},
             status=201,
         )
 
@@ -336,7 +336,7 @@ def create_education_ajax(request):
 def update_education_ajax(request, education_id):
     if not request.user.is_superuser and not is_editor(request.user):
         return JsonResponse(
-            {"message": "Anda tidak memiliki izin untuk mengedit riwayat pendidikan ini."},
+            {"message": "You do not have permission to edit this education record."},
             status=403,
         )
 
@@ -345,15 +345,15 @@ def update_education_ajax(request, education_id):
     form = EducationForm(request.POST, instance=education, prefix="update")
     if form.is_valid():
         form.save()
-        return JsonResponse({"message": "Riwayat pendidikan berhasil diperbarui."}, status=200)
+        return JsonResponse({"message": "Education record updated successfully."}, status=200)
 
     return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 @require_POST
 def delete_education_ajax(request, education_id):
     if not request.user.is_superuser:
-        return JsonResponse({"message" : "Tidak memiliki izin untuk menghapus riwayat pendidikan."}, status=403)
+        return JsonResponse({"message" : "You do not have permission to delete education records."}, status=403)
 
     education = get_object_or_404(Education, pk=education_id)
     education.delete()
-    return JsonResponse({"message" : "Riwayat pendidikan berhasil dihapus!"}, status=200)
+    return JsonResponse({"message" : "Education record deleted successfully!"}, status=200)

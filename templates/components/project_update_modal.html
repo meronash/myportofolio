@@ -8,16 +8,16 @@
             class="project-form-modal__backdrop"
             popovertarget="update-project-modal"
             popovertargetaction="hide"
-            aria-label="Tutup form update proyek"></button>
+            aria-label="Close project update form"></button>
 
     <div class="project-form-modal__content">
         <button type="button"
                 class="project-form-modal__close"
                 popovertarget="update-project-modal"
                 popovertargetaction="hide"
-                aria-label="Tutup form update proyek">×</button>
+                aria-label="Close project update form">×</button>
 
-        <h2 id="update-project-modal-title">Update Proyek</h2>
+        <h2 id="update-project-modal-title">Update Project</h2>
         <form id="update-project-form" class="project-form">
             <input type="hidden" id="update-id" name="id">
             
@@ -29,8 +29,8 @@
             {% endfor %}
             
             <div class="project-form-modal__actions">
-                <button type="button" class="button button-secondary" popovertarget="update-project-modal" popovertargetaction="hide">Batal</button>
-                <button type="submit" class="button button-warning">Simpan Perubahan</button>
+                <button type="button" class="button button-secondary" popovertarget="update-project-modal" popovertargetaction="hide">Cancel</button>
+                <button type="submit" class="button button-warning">Save Changes</button>
             </div>
         </form>
     </div>

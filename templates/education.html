@@ -8,7 +8,7 @@
 <main>
     <section class="education-section" id="education">
         <div class="container">
-            <p class="section-kicker">Riwayat pendidikan saya</p>
+            <p class="section-kicker">My Education</p>
             <div class="education-header">
                 <h1>Education</h1>
                 {% if user.is_superuser %}
@@ -16,7 +16,7 @@
                         class="button education-add-button"
                         popovertarget="add-education-modal">
                     <span aria-hidden="true">+</span>
-                    Tambah Riwayat Pendidikan
+                    Add Education
                 </button>
                 {% endif %}
             </div>
@@ -25,22 +25,22 @@
                         id="search-input"
                         name="institution"
                         value="{{ institution_query }}"
-                        placeholder="Cari berdasarkan nama institusi"
+                        placeholder="Search by institution name"
                         class="education-search__input"
-                        aria-label="Cari berdasarkan nama institusi">
-                <button type="submit" class="button">Cari</button>
+                        aria-label="Search by institution name">
+                <button type="submit" class="button">Search</button>
             </form>
             
             <div id="loading" class="empty-state hide">
-                <p>Memuat riwayat pendidikan...</p>
+                <p>Loading education...</p>
             </div>
 
             <div id="error" class="empty-state hide">
-                <p>Gagal memuat data riwayat pendidikan. Silakan coba lagi.</p>
+                <p>Failed to load education. Please try again.</p>
             </div>
 
             <div id="empty" class="empty-state hide">
-                <p>Belum ada riwayat pendidikan yang ditambahkan atau ditemukan.</p>
+                <p>No education records have been added or found.</p>
             </div>
 
             <div id="grid" class="education-grid hide"></div>
@@ -95,7 +95,7 @@
 
         const statusText = education.ended_at === null 
             ? "Sedang berlangsung" 
-            : "Selesai";
+            : "Completed";
         
         const deleteUrl = "{% url 'main:delete_education_ajax' '00000000-0000-0000-0000-000000000000' %}"
             .replace('00000000-0000-0000-0000-000000000000', educationId);
@@ -106,7 +106,7 @@
             ? `<button type="button" 
                        class="button button-danger" 
                        onclick="openDeleteEducationModal('${deleteUrl}', '${escapeHtml(education.institution)}')">
-                   Hapus
+                   Delete
                </button>`
             : '';
 
@@ -117,8 +117,8 @@
         const isStarredClass = education.is_starred ? " is-starred" : "";
         const starText = education.is_starred ? "Unstar" : "Star";
         const starTitle = education.star_count > 0
-            ? `Dibintangi oleh ${escapeHtml(education.starred_by_names)}`
-            : "Jadilah yang pertama memberi star";
+            ? `Starred by ${escapeHtml(education.starred_by_names)}`
+            : "Be the first to star this.";
 
         const completeCardHtml = `
             <h2>${escapeHtml(education.institution)}</h2>
@@ -167,13 +167,13 @@
                 });
                 if (response.ok) {
                     document.getElementById('delete-education-modal').hidePopover();
-                    showToast('Berhasil', 'Riwayat berhasil dihapus!', 'success');
+                    showToast('Success', 'Education record deleted successfully!', 'success');
                     fetchEducations(searchInput.value.trim());
                 } else {
-                    showToast('Gagal', 'Terjadi kesalahan.', 'error');
+                    showToast('Error', 'An error occurred.', 'error');
                 }
             } catch (error) {
-                showToast('Gagal', 'Tidak dapat terhubung ke server.', 'error');
+                showToast('Error', 'Could not connect to the server.', 'error');
             } finally {
                 this.disabled = false;
             }
@@ -269,17 +269,17 @@
             if (response.ok) {
                 educationForm.reset();
                 closeEducationModal();
-                showToast('Berhasil', 'Riwayat Pendidikan baru berhasil ditambahkan!', 'success');
+                showToast('Success', 'New education record added successfully!', 'success');
                 fetchEducations(searchInput.value.trim());
             } else {
                 const errorMessages = result.errors
                     ? Object.values(result.errors).flat().map(error => error.message)
-                    : [result.message || `Terjadi kesalahan (status ${response.status}).`];
-                showToast('Gagal menambahkan riwayat pendidikan', errorMessages.join(' '), 'error');
+                    : [result.message || `An error occurred (status ${response.status}).`];
+                showToast('Failed to add education record', errorMessages.join(' '), 'error');
             }
         } catch (error) {
             console.error('Error adding project:', error);
-            showToast('Gagal menambahkan riwayat pendidikan', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
+            showToast('Failed to add education record', 'Could not connect to the server. Please try again.', 'error');
         } finally {
             submitButton.disabled = false;
         }
@@ -329,17 +329,17 @@
                 if (response.ok) {
                     updateExperienceForm.reset();
                     closeUpdateModal();
-                    showToast('Berhasil', 'Riwayat Pendidikan berhasil diperbarui!', 'success');
+                    showToast('Success', 'Education record updated successfully!', 'success');
                     fetchEducations(searchInput.value.trim()); 
                 } else {
                     const errorMessages = result.errors
                         ? Object.values(result.errors).flat().map(error => error.message)
-                        : [result.message || `Terjadi kesalahan (status ${response.status}).`];
-                    showToast('Gagal update riwayat pendidikan', errorMessages.join(' '), 'error');
+                        : [result.message || `An error occurred (status ${response.status}).`];
+                    showToast('Failed to update education record', errorMessages.join(' '), 'error');
                 }
             } catch (error) {
                 console.error('Error updating education:', error);
-                showToast('Gagal', 'Tidak dapat terhubung ke server.', 'error');
+                showToast('Error', 'Could not connect to the server.', 'error');
             } finally {
                 submitButton.disabled = false;
             }

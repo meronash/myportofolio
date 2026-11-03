@@ -8,7 +8,7 @@
 <main>
     <section class="experience-section" id="experience">
         <div class="container">
-            <p class="section-kicker">Karya yang saya bangun</p>
+            <p class="section-kicker">Projects I Have Built</p>
             <div class="project-header">
                 <h1>Projects</h1>
                 {% if user.is_superuser %} 
@@ -16,7 +16,7 @@
                             class="button project-add-button"
                             popovertarget="add-project-modal">
                         <span aria-hidden="true">+</span>
-                        Tambah Proyek
+                        Add Project
                     </button>
                 {% endif %}
             </div>
@@ -25,22 +25,22 @@
                         id="search-input"
                         name="title"
                         value="{{ title_query }}"
-                        placeholder="Cari berdasarkan nama proyek"
+                        placeholder="Search projects by title"
                         class="project-search__input"
-                        aria-label="Cari berdasarkan nama proyek">
-                <button type="submit" class="button">Cari</button>
+                        aria-label="Search projects by title">
+                <button type="submit" class="button">Search</button>
             </form>
 
             <div id="loading" class="empty-state hide">
-                <p>Memuat projects...</p>
+                <p>Loading projects...</p>
             </div>
 
             <div id="error" class="empty-state hide">
-                <p>Gagal memuat data projects. Silakan coba lagi.</p>
+                <p>Failed to load projects. Please try again.</p>
             </div>
 
             <div id="empty" class="empty-state hide">
-                <p>Belum ada proyek yang ditambahkan atau ditemukan.</p>
+                <p>No projects have been added or found.</p>
             </div>
 
             <div id="grid" class="experience-grid project-grid hide"></div>
@@ -109,7 +109,7 @@
                 data-action="star" data-id="${escapeHtml(project.id)}"
                 title="${escapeHtml(project.starred_by_names)}">
                 ${project.is_starred ? 'Unstar' : 'Star'} (${project.star_count})</button>`
-            : `<a href="{% url 'main:login' %}" class="button">Login to star (${project.star_count})</a>`;
+            : `<a href="{% url 'main:login' %}" class="button">Log in to star (${project.star_count})</a>`;
         const remove = IS_SUPERUSER
             ? `<button type="button" class="button button-danger" data-action="delete"
                 data-id="${escapeHtml(project.id)}">Delete</button>` : '';
