@@ -106,13 +106,22 @@ class ProjectAPITest(APITestCase):
         self.assertEqual(response.data["star_count"], 0)
         self.assertFalse(response.data["is_starred"])
 
-    def test_staff_and_editor_cannot_manage_tutorial_projects(self):
+    def test_staff_alone_cannot_update_but_editor_can_update_projects(self):
         self.visitor.is_staff = True
         self.visitor.save()
-        self.visitor.groups.add(Group.objects.create(name="Editor"))
         self.client.force_authenticate(user=self.visitor)
         response = self.client.patch(self.detail_url, {"title": "Changed"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.visitor.groups.add(Group.objects.create(name="Editor"))
+        response = self.client.patch(self.detail_url, {"title": "Changed"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "Changed")
+        response = self.client.post(self.list_url, self.payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(self.client.delete(self.detail_url).status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Project.objects.filter(pk=self.project.pk).exists())
 
     def test_wrong_method(self):
         self.client.force_authenticate(user=self.owner)
@@ -128,7 +137,6 @@ class ProjectAPITest(APITestCase):
     def test_session_write_with_csrf_succeeds(self):
         client = APIClient(enforce_csrf_checks=True)
         client.login(username="owner", password="test-password")
-        # The Browsable API form renders a real CSRF token into the response.
         page = client.get(self.list_url, HTTP_ACCEPT="text/html")
         self.assertEqual(page.status_code, status.HTTP_200_OK)
         token = client.cookies["csrftoken"].value
