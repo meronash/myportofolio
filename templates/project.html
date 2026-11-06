@@ -50,8 +50,10 @@
 
 {% if user.is_superuser %}
     {% include "components/project_form_modal.html" %}
-    {% include "components/project_update_modal.html" %}
     {% include "components/project_delete_modal.html" %}
+{% endif %}
+{% if user.is_superuser or is_editor %}
+    {% include "components/project_update_modal.html" %}
 {% endif %}
 
 {% csrf_token %}
@@ -60,6 +62,8 @@
     const DETAIL_PROJECT_ENDPOINT = "{% url 'api:project-detail' '00000000-0000-0000-0000-000000000000' %}";
     const STAR_PROJECT_ENDPOINT = "{% url 'api:project-star' '00000000-0000-0000-0000-000000000000' %}";
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
+    const IS_EDITOR = "{{ is_editor|yesno:'true,false' }}" === "true";
+    const CAN_UPDATE = IS_SUPERUSER || IS_EDITOR;
     const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
 
     const loadingState = document.getElementById('loading');
@@ -69,8 +73,15 @@
     const searchForm = document.getElementById('project-search-form');
     const searchInput = document.getElementById('search-input');
     const projectForm = document.getElementById('project-form');
+    const updateForm = document.getElementById('update-project-form');
+    const updateModal = document.getElementById('update-project-modal');
+    const deleteModal = document.getElementById('delete-project-modal');
+    const deleteName = document.getElementById('delete-project-name');
+    const confirmDeleteButton = document.getElementById('confirm-delete-project-btn');
     let projectsAbortController;
     let searchDebounceTimer;
+    let projectCache = new Map();
+    let pendingDeleteId = null;
 
     function getCookie(name) {
         const prefix = `${name}=`;
@@ -110,6 +121,9 @@
                 title="${escapeHtml(project.starred_by_names)}">
                 ${project.is_starred ? 'Unstar' : 'Star'} (${project.star_count})</button>`
             : `<a href="{% url 'main:login' %}" class="button">Log in to star (${project.star_count})</a>`;
+        const update = CAN_UPDATE
+            ? `<button type="button" class="button button-secondary" data-action="update"
+                data-id="${escapeHtml(project.id)}">Update</button>` : '';
         const remove = IS_SUPERUSER
             ? `<button type="button" class="button button-danger" data-action="delete"
                 data-id="${escapeHtml(project.id)}">Delete</button>` : '';
@@ -117,7 +131,7 @@
             <span class="experience-category">${escapeHtml(project.tech_stack)}</span>
             <p class="experience-description">${escapeHtml(project.description)}</p>
             <div class="project-card-actions"><div class="project-actions">
-            ${link}${star}${remove}</div></div>`;
+            ${link}${star}${update}${remove}</div></div>`;
         return article;
     }
 
@@ -134,6 +148,7 @@
             });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const projects = await response.json();
+            projectCache = new Map(projects.map(item => [item.id, item]));
             gridContainer.replaceChildren(...projects.map(buildProjectCardElement));
             displayPageSection({ showGrid: projects.length > 0, showEmpty: projects.length === 0 });
         } catch (error) {
@@ -187,17 +202,86 @@
 
     if (projectForm) projectForm.addEventListener('submit', addProject);
 
+    function openUpdateModal(project) {
+        document.getElementById('update-id').value = project.id;
+        updateForm.elements['update-title'].value = project.title ?? '';
+        updateForm.elements['update-description'].value = project.description ?? '';
+        updateForm.elements['update-tech_stack'].value = project.tech_stack ?? '';
+        updateForm.elements['update-project_url'].value = project.project_url ?? '';
+        updateForm.elements['update-project_image_url'].value = project.project_image_url ?? '';
+        updateModal.showPopover();
+    }
+
+    async function updateProject(event) {
+        event.preventDefault();
+        const button = updateForm.querySelector('button[type="submit"]');
+        button.disabled = true;
+        try {
+            const fields = new FormData(updateForm);
+            const payload = Object.fromEntries([
+                'title', 'description', 'tech_stack', 'project_url', 'project_image_url',
+            ].map(name => [name, fields.get(`update-${name}`)]));
+            await writeProject(
+                projectEndpoint(DETAIL_PROJECT_ENDPOINT, fields.get('id')), 'PATCH', payload,
+            );
+            updateModal.hidePopover();
+            showToast('Success', 'Project updated.', 'success');
+            await fetchProjects(searchInput.value.trim());
+        } catch (error) {
+            showToast('Could not update project', error.message, 'error');
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    if (updateForm) updateForm.addEventListener('submit', updateProject);
+
+    function openDeleteModal(project) {
+        pendingDeleteId = project.id;
+        deleteName.textContent = project.title;
+        deleteModal.showPopover();
+    }
+
+    async function confirmDeleteProject() {
+        if (!pendingDeleteId) return;
+        confirmDeleteButton.disabled = true;
+        try {
+            await writeProject(
+                projectEndpoint(DETAIL_PROJECT_ENDPOINT, pendingDeleteId), 'DELETE',
+            );
+            deleteModal.hidePopover();
+            showToast('Success', 'Project deleted.', 'success');
+            await fetchProjects(searchInput.value.trim());
+        } catch (error) {
+            deleteModal.hidePopover();
+            showToast('Could not delete project', error.message, 'error');
+        } finally {
+            pendingDeleteId = null;
+            confirmDeleteButton.disabled = false;
+        }
+    }
+
+    if (confirmDeleteButton) confirmDeleteButton.addEventListener('click', confirmDeleteProject);
+
     gridContainer.addEventListener('click', async function(event) {
         const button = event.target.closest('button[data-action]');
         if (!button || button.disabled) return;
         const action = button.dataset.action;
-        if (action === 'delete' && !window.confirm('Delete this project?')) return;
+        const project = projectCache.get(button.dataset.id);
+
+        if (action === 'update') {
+            if (project) openUpdateModal(project);
+            return;
+        }
+        if (action === 'delete') {
+            if (project) openDeleteModal(project);
+            return;
+        }
+
         button.disabled = true;
         try {
-            const pattern = action === 'star' ? STAR_PROJECT_ENDPOINT : DETAIL_PROJECT_ENDPOINT;
-            await writeProject(projectEndpoint(pattern, button.dataset.id),
-                action === 'star' ? 'POST' : 'DELETE');
-            showToast('Success', action === 'star' ? 'Star updated.' : 'Project deleted.', 'success');
+            await writeProject(projectEndpoint(STAR_PROJECT_ENDPOINT, button.dataset.id), 'POST');
+            showToast('Success', 'Star updated.', 'success');
             await fetchProjects(searchInput.value.trim());
         } catch (error) {
             showToast('Request failed', error.message, 'error');

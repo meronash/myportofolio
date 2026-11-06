@@ -49,8 +49,10 @@
 
 {% if user.is_superuser %}
     {% include "components/experience_form_modal.html" %}
-    {% include "components/experience_update_modal.html" %}
     {% include "components/experience_delete_modal.html" %}
+{% endif %}
+{% if user.is_superuser or is_editor %}
+    {% include "components/experience_update_modal.html" %}
 {% endif %}
 
 {% csrf_token %}
@@ -59,6 +61,8 @@
     const DETAIL_PROJECT_ENDPOINT = "{% url 'api:experience-detail' '00000000-0000-0000-0000-000000000000' %}";
     const STAR_PROJECT_ENDPOINT = "{% url 'api:experience-star' '00000000-0000-0000-0000-000000000000' %}";
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
+    const IS_EDITOR = "{{ is_editor|yesno:'true,false' }}" === "true";
+    const CAN_UPDATE = IS_SUPERUSER || IS_EDITOR;
     const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
 
     const loadingState = document.getElementById('loading');
@@ -68,8 +72,15 @@
     const searchForm = document.getElementById('experience-search-form');
     const searchInput = document.getElementById('search-input');
     const experienceForm = document.getElementById('experience-form');
+    const updateForm = document.getElementById('update-experience-form');
+    const updateModal = document.getElementById('update-experience-modal');
+    const deleteModal = document.getElementById('delete-experience-modal');
+    const deleteName = document.getElementById('delete-experience-name');
+    const confirmDeleteButton = document.getElementById('confirm-delete-experience-btn');
     let experiencesAbortController;
     let searchDebounceTimer;
+    let experienceCache = new Map();
+    let pendingDeleteId = null;
 
     function getCookie(name) {
         const prefix = `${name}=`;
@@ -108,6 +119,9 @@
                 title="${escapeHtml(experience.starred_by_names)}">
                 ${experience.is_starred ? 'Unstar' : 'Star'} (${experience.star_count})</button>`
             : `<a href="{% url 'main:login' %}" class="button">Login to star (${experience.star_count})</a>`;
+        const update = CAN_UPDATE
+            ? `<button type="button" class="button button-secondary" data-action="update"
+                data-id="${escapeHtml(experience.id)}">Update</button>` : '';
         const remove = IS_SUPERUSER
             ? `<button type="button" class="button button-danger" data-action="delete"
                 data-id="${escapeHtml(experience.id)}">Delete</button>` : '';
@@ -116,7 +130,7 @@
             <p class="experience-period">${period}</p>
             <p class="experience-description">${escapeHtml(experience.description)}</p>
             <div class="experience-card-actions"><div class="experience-actions">
-            ${star}${remove}</div></div>`;
+            ${star}${update}${remove}</div></div>`;
         return article;
     }
 
@@ -133,6 +147,7 @@
             });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const experiences = await response.json();
+            experienceCache = new Map(experiences.map(item => [item.id, item]));
             gridContainer.replaceChildren(...experiences.map(buildExperienceCardElement));
             displayPageSection({ showGrid: experiences.length > 0, showEmpty: experiences.length === 0 });
         } catch (error) {
@@ -172,6 +187,7 @@
             const payload = Object.fromEntries([
                 'title', 'description', 'category', 'thumbnail', 'started_at', 'ended_at',
             ].map(name => [name, fields.get(name)]));
+            payload.ended_at = payload.ended_at || null;
             await writeExperience(BASE_PROJECTS_ENDPOINT, 'POST', payload);
             experienceForm.reset();
             document.getElementById('add-experience-modal').hidePopover();
@@ -186,17 +202,88 @@
 
     if (experienceForm) experienceForm.addEventListener('submit', addExperience);
 
+    function openUpdateModal(experience) {
+        document.getElementById('update-id').value = experience.id;
+        updateForm.elements['update-title'].value = experience.title ?? '';
+        updateForm.elements['update-description'].value = experience.description ?? '';
+        updateForm.elements['update-category'].value = experience.category ?? '';
+        updateForm.elements['update-thumbnail'].value = experience.thumbnail ?? '';
+        updateForm.elements['update-started_at'].value = experience.started_at ?? '';
+        updateForm.elements['update-ended_at'].value = experience.ended_at ?? '';
+        updateModal.showPopover();
+    }
+
+    async function updateExperience(event) {
+        event.preventDefault();
+        const button = updateForm.querySelector('button[type="submit"]');
+        button.disabled = true;
+        try {
+            const fields = new FormData(updateForm);
+            const payload = Object.fromEntries([
+                'title', 'description', 'category', 'thumbnail', 'started_at', 'ended_at',
+            ].map(name => [name, fields.get(`update-${name}`)]));
+            payload.ended_at = payload.ended_at || null;
+            await writeExperience(
+                experienceEndpoint(DETAIL_PROJECT_ENDPOINT, fields.get('id')), 'PATCH', payload,
+            );
+            updateModal.hidePopover();
+            showToast('Success', 'Experience updated.', 'success');
+            await fetchExperiences(searchInput.value.trim());
+        } catch (error) {
+            showToast('Could not update experience', error.message, 'error');
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    if (updateForm) updateForm.addEventListener('submit', updateExperience);
+
+    function openDeleteModal(experience) {
+        pendingDeleteId = experience.id;
+        deleteName.textContent = experience.title;
+        deleteModal.showPopover();
+    }
+
+    async function confirmDeleteExperience() {
+        if (!pendingDeleteId) return;
+        confirmDeleteButton.disabled = true;
+        try {
+            await writeExperience(
+                experienceEndpoint(DETAIL_PROJECT_ENDPOINT, pendingDeleteId), 'DELETE',
+            );
+            deleteModal.hidePopover();
+            showToast('Success', 'Experience deleted.', 'success');
+            await fetchExperiences(searchInput.value.trim());
+        } catch (error) {
+            deleteModal.hidePopover();
+            showToast('Could not delete experience', error.message, 'error');
+        } finally {
+            pendingDeleteId = null;
+            confirmDeleteButton.disabled = false;
+        }
+    }
+
+    if (confirmDeleteButton) confirmDeleteButton.addEventListener('click', confirmDeleteExperience);
+
     gridContainer.addEventListener('click', async function(event) {
         const button = event.target.closest('button[data-action]');
         if (!button || button.disabled) return;
         const action = button.dataset.action;
-        if (action === 'delete' && !window.confirm('Delete this experience?')) return;
+        const experience = experienceCache.get(button.dataset.id);
+
+        if (action === 'update') {
+            if (experience) openUpdateModal(experience);
+            return;
+        }
+        if (action === 'delete') {
+            if (experience) openDeleteModal(experience);
+            return;
+        }
+
         button.disabled = true;
         try {
-            const pattern = action === 'star' ? STAR_PROJECT_ENDPOINT : DETAIL_PROJECT_ENDPOINT;
-            await writeExperience(experienceEndpoint(pattern, button.dataset.id),
-                action === 'star' ? 'POST' : 'DELETE');
-            showToast('Success', action === 'star' ? 'Star updated.' : 'Experience deleted.', 'success');
+            await writeExperience(experienceEndpoint(STAR_PROJECT_ENDPOINT, button.dataset.id), 'POST');
+            showToast('Success', 'Star updated.', 'success');
             await fetchExperiences(searchInput.value.trim());
         } catch (error) {
             showToast('Request failed', error.message, 'error');
