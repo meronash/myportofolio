@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block meta %}
-    <title>Login - {{ name }}</title>
+    <title>Log in - {{ name }}</title>
 {% endblock meta %}
 {% block content %}
     <main>
         <section class="experience-section">
             <div class="container">
-                <h1>Login</h1>
+                <h1>Log in</h1>
                 {% for message in messages %}
                     <p class="form-message">{{ message }}</p>
                 {% endfor %}
@@ -24,9 +24,9 @@
                     {% for error in form.non_field_errors %}
                         <p class="form-error">{{ error }}</p>
                     {% endfor %}
-                    <button type="submit" class="button">Login</button>
+                    <button type="submit" class="button">Log in</button>
                 </form>
-                <p>Belum punya akun? <a href="{% url 'main:register' %}">Daftar di sini</a>.</p>
+                <p>Need an account? <a href="{% url 'main:register' %}">Register here</a>.</p>
             </div>
         </section>
     </main>

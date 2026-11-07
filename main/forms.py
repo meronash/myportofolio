@@ -16,11 +16,11 @@ class ProjectForm(ModelForm):
         ]
 
         labels = {
-            "title": "Nama Proyek",
-            "description": "Deskripsi Proyek",
-            "tech_stack": "Teknologi yang Digunakan",
-            "project_url": "URL Proyek",
-            "project_image_url": "URL Gambar Proyek",
+            "title": "Project Title",
+            "description": "Project Description",
+            "tech_stack": "Technologies Used",
+            "project_url": "Project URL",
+            "project_image_url": "Project Image URL",
         }
 
         widgets = {
@@ -32,7 +32,7 @@ class ProjectForm(ModelForm):
             ),
             "description": Textarea(
                 attrs={
-                    "placeholder": "Ceritakan Proyekmu",
+                    "placeholder": "Describe your project",
                     "rows": 3,
                 }
             ),
@@ -56,7 +56,7 @@ class ProjectForm(ModelForm):
     def clean_title(self):
         title = strip_tags(self.cleaned_data["title"]).strip()
         if not title:
-            raise ValidationError("Nama proyek tidak boleh hanya berisi tag HTML.")
+            raise ValidationError("Project title cannot consist only of HTML tags.")
         return title
 
     def clean_tech_stack(self):
@@ -77,11 +77,11 @@ class EducationForm(ModelForm):
         ]
 
         labels = {
-            "institution": "Nama Institusi Pendidikan",
-            "description": "Deskripsi Pendidikan yang Ditempuh",
-            "degree": "Jenjang Pendidikan",
-            "started_at": "Waktu Dimulai",
-            "ended_at": "Waktu Selesai",
+            "institution": "Institution Name",
+            "description": "Education Description",
+            "degree": "Degree",
+            "started_at": "Start Date",
+            "ended_at": "End Date",
         }
 
         widgets = {
@@ -93,13 +93,13 @@ class EducationForm(ModelForm):
             ),
             "description": Textarea(
                 attrs={
-                    "placeholder": "Ceritakan Perjalanan Pendidikanmu",
+                    "placeholder": "Describe your education",
                     "rows": 3,
                 }
             ),
             "degree": TextInput(
                 attrs={
-                    "placeholder": "S1",
+                    "placeholder": "Bachelor's degree",
                 }
             ),
             "started_at": DateInput(
@@ -117,7 +117,7 @@ class EducationForm(ModelForm):
     def clean_institution(self):
         institution = strip_tags(self.cleaned_data["institution"]).strip()
         if not institution:
-            raise ValidationError("Nama institusi tidak boleh kosong.")
+            raise ValidationError("Institution name cannot be empty.")
         return institution
 
     def clean_degree(self):
@@ -139,24 +139,24 @@ class ExperienceForm(ModelForm):
         ]
 
         labels = {
-            "title": "Nama Pengalaman",
-            "description": "Deskripsi Pengalaman",
-            "category": "Kategori Pengalaman",
-            "thumbnail": "URL Thumbnail Pengalaman",
-            "started_at": "Waktu Dimulai",
-            "ended_at": "Waktu Selesai",
+            "title": "Experience Title",
+            "description": "Experience Description",
+            "category": "Experience Category",
+            "thumbnail": "Experience Thumbnail URL",
+            "started_at": "Start Date",
+            "ended_at": "End Date",
         }
 
         widgets = {
             "title": TextInput(
                 attrs={
-                    "placeholder": "Asisten Dosen Manajemen Bisnis",
+                    "placeholder": "Business Management Teaching Assistant",
                     "maxlength": 255,
                 }
             ),
             "description": Textarea(
                 attrs={
-                    "placeholder": "Ceritakan Pengalamanmu",
+                    "placeholder": "Describe your experience",
                     "rows": 3,
                 }
             ),
@@ -180,7 +180,7 @@ class ExperienceForm(ModelForm):
     def clean_title(self):
         title = strip_tags(self.cleaned_data["title"]).strip()
         if not title:
-            raise ValidationError("Nama pengalaman tidak boleh kosong.")
+            raise ValidationError("Experience title cannot be empty.")
         return title
 
     def clean_description(self):

@@ -8,7 +8,7 @@
 <main>
     <section class="education-section" id="education">
         <div class="container">
-            <p class="section-kicker">Riwayat pendidikan saya</p>
+            <p class="section-kicker">My Education</p>
             <div class="education-header">
                 <h1>Education</h1>
                 {% if user.is_superuser %}
@@ -16,7 +16,7 @@
                         class="button education-add-button"
                         popovertarget="add-education-modal">
                     <span aria-hidden="true">+</span>
-                    Tambah Riwayat Pendidikan
+                    Add Education
                 </button>
                 {% endif %}
             </div>
@@ -25,22 +25,22 @@
                         id="search-input"
                         name="institution"
                         value="{{ institution_query }}"
-                        placeholder="Cari berdasarkan nama institusi"
+                        placeholder="Search by institution name"
                         class="education-search__input"
-                        aria-label="Cari berdasarkan nama institusi">
-                <button type="submit" class="button">Cari</button>
+                        aria-label="Search by institution name">
+                <button type="submit" class="button">Search</button>
             </form>
             
             <div id="loading" class="empty-state hide">
-                <p>Memuat riwayat pendidikan...</p>
+                <p>Loading education...</p>
             </div>
 
             <div id="error" class="empty-state hide">
-                <p>Gagal memuat data riwayat pendidikan. Silakan coba lagi.</p>
+                <p>Failed to load education. Please try again.</p>
             </div>
 
             <div id="empty" class="empty-state hide">
-                <p>Belum ada riwayat pendidikan yang ditambahkan atau ditemukan.</p>
+                <p>No education records have been added or found.</p>
             </div>
 
             <div id="grid" class="education-grid hide"></div>
@@ -50,16 +50,21 @@
 
 {% if user.is_superuser %}
     {% include "components/education_form_modal.html" %}
-    {% include "components/education_update_modal.html" %}
     {% include "components/education_delete_modal.html" %}
 {% endif %}
+{% if user.is_superuser or is_editor %}
+    {% include "components/education_update_modal.html" %}
+{% endif %}
 
+{% csrf_token %}
 <script>
-    const BASE_EDUCATION_ENDPOINT = "{% url 'main:get_education_json' %}";
+    const BASE_PROJECTS_ENDPOINT = "{% url 'api:education-list' %}";
+    const DETAIL_PROJECT_ENDPOINT = "{% url 'api:education-detail' '00000000-0000-0000-0000-000000000000' %}";
+    const STAR_PROJECT_ENDPOINT = "{% url 'api:education-star' '00000000-0000-0000-0000-000000000000' %}";
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
-    let educationAbortController;
-    let currentEducationData = [];
-    let currentDeleteUrl = "";
+    const IS_EDITOR = "{{ is_editor|yesno:'true,false' }}" === "true";
+    const CAN_UPDATE = IS_SUPERUSER || IS_EDITOR;
+    const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
 
     const loadingState = document.getElementById('loading');
     const errorState = document.getElementById('error');
@@ -67,285 +72,233 @@
     const gridContainer = document.getElementById('grid');
     const searchForm = document.getElementById('education-search-form');
     const searchInput = document.getElementById('search-input');
-    const SEARCH_DEBOUNCE_DELAY = 300;
+    const educationForm = document.getElementById('education-form');
+    const updateForm = document.getElementById('update-education-form');
+    const updateModal = document.getElementById('update-education-modal');
+    const deleteModal = document.getElementById('delete-education-modal');
+    const deleteName = document.getElementById('delete-education-name');
+    const confirmDeleteButton = document.getElementById('confirm-delete-education-btn');
+    let educationsAbortController;
     let searchDebounceTimer;
+    let educationCache = new Map();
+    let pendingDeleteId = null;
 
-    function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
+    function getCookie(name) {
+        const prefix = `${name}=`;
+        const cookie = document.cookie.split(';').map(value => value.trim())
+            .find(value => value.startsWith(prefix));
+        return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null;
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+    }
+
+    function educationEndpoint(pattern, id) {
+        return pattern.replace('00000000-0000-0000-0000-000000000000', id);
+    }
+
+    function displayPageSection({ showLoading = false, showError = false,
+        showEmpty = false, showGrid = false }) {
         loadingState.classList.toggle('hide', !showLoading);
         errorState.classList.toggle('hide', !showError);
         emptyState.classList.toggle('hide', !showEmpty);
         gridContainer.classList.toggle('hide', !showGrid);
     }
 
-    function escapeHtml(value) {
-        return String(value ?? '')
-            .replaceAll('&', '&amp;')
-            .replaceAll('<', '&lt;')
-            .replaceAll('>', '&gt;')
-            .replaceAll('"', '&quot;')
-            .replaceAll("'", '&#39;');
+    function buildEducationCardElement(education) {
+        const article = document.createElement('article');
+        article.className = 'experience-card';
+        const period = `${escapeHtml(education.started_at)} - ${education.ended_at ? escapeHtml(education.ended_at) : 'Present'}`;
+        const star = IS_AUTHENTICATED
+            ? `<button type="button" class="button button-star${education.is_starred ? ' is-starred' : ''}"
+                data-action="star" data-id="${escapeHtml(education.id)}"
+                title="${escapeHtml(education.starred_by_names)}">
+                ${education.is_starred ? 'Unstar' : 'Star'} (${education.star_count})</button>`
+            : `<a href="{% url 'main:login' %}" class="button">Login to star (${education.star_count})</a>`;
+        const update = CAN_UPDATE
+            ? `<button type="button" class="button button-secondary" data-action="update"
+                data-id="${escapeHtml(education.id)}">Update</button>` : '';
+        const remove = IS_SUPERUSER
+            ? `<button type="button" class="button button-danger" data-action="delete"
+                data-id="${escapeHtml(education.id)}">Delete</button>` : '';
+        article.innerHTML = `<h2>${escapeHtml(education.institution)}</h2>
+            <span class="experience-category">${escapeHtml(education.degree)}</span>
+            <p class="experience-period">${period}</p>
+            <p class="experience-description">${escapeHtml(education.description)}</p>
+            <div class="education-card-actions"><div class="education-actions">
+            ${star}${update}${remove}</div></div>`;
+        return article;
     }
 
-    function buildEducationCardElement(item) {
-        const education = item.fields;
-        const educationId = item.pk;
-
-        const articleElement = document.createElement('article');
-        articleElement.className = 'education-card';
-
-        const statusText = education.ended_at === null 
-            ? "Sedang berlangsung" 
-            : "Selesai";
-        
-        const deleteUrl = "{% url 'main:delete_education_ajax' '00000000-0000-0000-0000-000000000000' %}"
-            .replace('00000000-0000-0000-0000-000000000000', educationId);
-        const starUrl = "{% url 'main:toggle_star_education' '00000000-0000-0000-0000-000000000000' %}"
-            .replace('00000000-0000-0000-0000-000000000000', educationId);
-
-        const deleteHtml = IS_SUPERUSER 
-            ? `<button type="button" 
-                       class="button button-danger" 
-                       onclick="openDeleteEducationModal('${deleteUrl}', '${escapeHtml(education.institution)}')">
-                   Hapus
-               </button>`
-            : '';
-
-            const updateHtml = IS_SUPERUSER 
-            ? `<button type="button" class="button button-secondary" onclick="openUpdateModal('${educationId}')">Update</button>`
-            : '';
-
-        const isStarredClass = education.is_starred ? " is-starred" : "";
-        const starText = education.is_starred ? "Unstar" : "Star";
-        const starTitle = education.star_count > 0
-            ? `Dibintangi oleh ${escapeHtml(education.starred_by_names)}`
-            : "Jadilah yang pertama memberi star";
-
-        const completeCardHtml = `
-            <h2>${escapeHtml(education.institution)}</h2>
-            <span class="education-degree">${escapeHtml(education.degree)}</span>
-            <p class="education-description">${escapeHtml(education.description)}</p>
-            <div class="education-card-actions">
-                <div class="education-actions">
-                    <form method="post" action="${starUrl}" class="star-form">
-                        {% csrf_token %}
-                        <button type="submit" 
-                                class="button button-star${isStarredClass}"
-                                title="${starTitle}">
-                            <span aria-hidden="true">★</span>
-                            ${starText}
-                            <span class="star-count">${education.star_count}</span>
-                        </button>
-                    </form>
-                    ${updateHtml}
-                    ${deleteHtml}
-                </div>
-            </div>
-        `;
-
-        articleElement.innerHTML = completeCardHtml;
-        return articleElement;
-    }
-
-    function closeEducationModal() {
-        document.getElementById("add-education-modal").hidePopover();
-    }
-
-    function openDeleteEducationModal(url, eduName) {
-        currentDeleteUrl = url;
-        document.getElementById('delete-education-name').textContent = eduName; 
-        document.getElementById('delete-education-modal').showPopover();
-    }
-
-    const confirmDeleteEduBtn = document.getElementById('confirm-delete-education-btn');
-    if (confirmDeleteEduBtn) {
-        confirmDeleteEduBtn.addEventListener('click', async function() {
-            this.disabled = true;
-            try {
-                const response = await fetch(currentDeleteUrl, {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
-                });
-                if (response.ok) {
-                    document.getElementById('delete-education-modal').hidePopover();
-                    showToast('Berhasil', 'Riwayat berhasil dihapus!', 'success');
-                    fetchEducations(searchInput.value.trim());
-                } else {
-                    showToast('Gagal', 'Terjadi kesalahan.', 'error');
-                }
-            } catch (error) {
-                showToast('Gagal', 'Tidak dapat terhubung ke server.', 'error');
-            } finally {
-                this.disabled = false;
-            }
-        });
-    }
-
-    async function fetchEducations(searchQuery = "") {
-        if (educationAbortController) educationAbortController.abort();
-        educationAbortController = new AbortController();
-
+    async function fetchEducations(searchQuery = '') {
+        if (educationsAbortController) educationsAbortController.abort();
+        educationsAbortController = new AbortController();
         try {
             displayPageSection({ showLoading: true });
-
-            const url = searchQuery ? `${BASE_EDUCATION_ENDPOINT}?institution=${encodeURIComponent(searchQuery)}` : BASE_EDUCATION_ENDPOINT;
-            
+            const url = new URL(BASE_PROJECTS_ENDPOINT, window.location.origin);
+            if (searchQuery) url.searchParams.set('institution', searchQuery);
             const response = await fetch(url, {
-                headers: { 'Accept': 'application/json' },
-                signal: educationAbortController.signal,
+                headers: { Accept: 'application/json' },
+                signal: educationsAbortController.signal,
             });
-
-            if (!response.ok) throw new Error('Failed to fetch data');
-
-            const educationData = await response.json();
-            currentEducationData = educationData;
-
-            if (educationData.length === 0) {
-                displayPageSection({ showEmpty: true });
-            } else {
-                gridContainer.innerHTML = '';
-                educationData.forEach(item => {
-                    gridContainer.appendChild(buildEducationCardElement(item));
-                });
-                displayPageSection({ showGrid: true });
-            }
-
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const educations = await response.json();
+            educationCache = new Map(educations.map(item => [item.id, item]));
+            gridContainer.replaceChildren(...educations.map(buildEducationCardElement));
+            displayPageSection({ showGrid: educations.length > 0, showEmpty: educations.length === 0 });
         } catch (error) {
             if (error.name === 'AbortError') return;
-            console.error('Error loading educations:', error);
+            console.error(error);
             displayPageSection({ showError: true });
         }
     }
 
-    function searchEducations() {
-        fetchEducations(searchInput.value.trim());
+    function apiErrorMessage(data, status) {
+        const messages = Object.values(data).flat().filter(value => typeof value === 'string');
+        return messages.join(' ') || `Request failed (HTTP ${status}).`;
     }
 
-    searchInput.addEventListener("input", function() {
-        clearTimeout(searchDebounceTimer);
-
-        searchDebounceTimer = setTimeout(function() {
-            searchEducations();
-        }, SEARCH_DEBOUNCE_DELAY);
-    });
-
-    searchForm.addEventListener("submit", function(event) {
-        event.preventDefault();
-        clearTimeout(searchDebounceTimer);
-        searchEducations();
-    });
-
-    const CREATE_EDUCATION_ENDPOINT = "{% url 'main:create_education_ajax' %}";
-    const educationForm = document.getElementById('education-form');
-
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
+    async function writeEducation(url, method, payload) {
+        const response = await fetch(url, {
+            method,
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: payload === undefined ? undefined : JSON.stringify(payload),
+        });
+        if (response.status === 204) return null;
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(apiErrorMessage(data, response.status));
+        return data;
     }
 
     async function addEducation(event) {
         event.preventDefault();
-
-        const submitButton = educationForm.querySelector('button[type="submit"]');
-        submitButton.disabled = true;
-
+        const button = educationForm.querySelector('button[type="submit"]');
+        button.disabled = true;
         try {
-            const response = await fetch(CREATE_EDUCATION_ENDPOINT, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': getCookie('csrftoken') },
-                body: new FormData(educationForm),
-            });
-            const result = await response.json().catch(() => ({}));
-
-            if (response.ok) {
-                educationForm.reset();
-                closeEducationModal();
-                showToast('Berhasil', 'Riwayat Pendidikan baru berhasil ditambahkan!', 'success');
-                fetchEducations(searchInput.value.trim());
-            } else {
-                const errorMessages = result.errors
-                    ? Object.values(result.errors).flat().map(error => error.message)
-                    : [result.message || `Terjadi kesalahan (status ${response.status}).`];
-                showToast('Gagal menambahkan riwayat pendidikan', errorMessages.join(' '), 'error');
-            }
+            const fields = new FormData(educationForm);
+            const payload = Object.fromEntries([
+                'institution', 'degree', 'description', 'started_at', 'ended_at',
+            ].map(name => [name, fields.get(name)]));
+            payload.ended_at = payload.ended_at || null;
+            await writeEducation(BASE_PROJECTS_ENDPOINT, 'POST', payload);
+            educationForm.reset();
+            document.getElementById('add-education-modal').hidePopover();
+            showToast('Success', 'Education created.', 'success');
+            await fetchEducations(searchInput.value.trim());
         } catch (error) {
-            console.error('Error adding project:', error);
-            showToast('Gagal menambahkan riwayat pendidikan', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
+            showToast('Could not create education', error.message, 'error');
         } finally {
-            submitButton.disabled = false;
+            button.disabled = false;
         }
     }
 
-    if (educationForm) {
-        educationForm.addEventListener('submit', addEducation);
+    if (educationForm) educationForm.addEventListener('submit', addEducation);
+
+    function openUpdateModal(education) {
+        document.getElementById('update-id').value = education.id;
+        updateForm.elements['update-institution'].value = education.institution ?? '';
+        updateForm.elements['update-degree'].value = education.degree ?? '';
+        updateForm.elements['update-description'].value = education.description ?? '';
+        updateForm.elements['update-started_at'].value = education.started_at ?? '';
+        updateForm.elements['update-ended_at'].value = education.ended_at ?? '';
+        updateModal.showPopover();
     }
 
-    function closeUpdateModal() {
-        document.getElementById("update-education-modal").hidePopover();
+    async function updateEducation(event) {
+        event.preventDefault();
+        const button = updateForm.querySelector('button[type="submit"]');
+        button.disabled = true;
+        try {
+            const fields = new FormData(updateForm);
+            const payload = Object.fromEntries([
+                'institution', 'degree', 'description', 'started_at', 'ended_at',
+            ].map(name => [name, fields.get(`update-${name}`)]));
+            payload.ended_at = payload.ended_at || null;
+            await writeEducation(
+                educationEndpoint(DETAIL_PROJECT_ENDPOINT, fields.get('id')), 'PATCH', payload,
+            );
+            updateModal.hidePopover();
+            showToast('Success', 'Education updated.', 'success');
+            await fetchEducations(searchInput.value.trim());
+        } catch (error) {
+            showToast('Could not update education', error.message, 'error');
+        } finally {
+            button.disabled = false;
+        }
     }
 
-    function openUpdateModal(educationId) {
-        const education = currentEducationData.find(item => item.pk === educationId);
-        if (!education) return;
+    if (updateForm) updateForm.addEventListener('submit', updateEducation);
 
-        document.getElementById('update-id').value = educationId;
-        document.getElementById('id_update-institution').value = education.fields.institution;
-        document.getElementById('id_update-degree').value = education.fields.degree;
-        document.getElementById('id_update-description').value = education.fields.description;
-        document.getElementById('id_update-started_at').value = education.fields.started_at;
-        document.getElementById('id_update-ended_at').value = education.fields.ended_at;
-
-        document.getElementById("update-education-modal").showPopover();
+    function openDeleteModal(education) {
+        pendingDeleteId = education.id;
+        deleteName.textContent = education.institution;
+        deleteModal.showPopover();
     }
 
-    const updateExperienceForm = document.getElementById('update-education-form');
-    if (updateExperienceForm) {
-        updateExperienceForm.addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const submitButton = updateExperienceForm.querySelector('button[type="submit"]');
-            submitButton.disabled = true;
-
-            const educationId = document.getElementById('update-id').value;
-            const UPDATE_ENDPOINT = `/education/update-ajax/${educationId}/`;
-
-            try {
-                const response = await fetch(UPDATE_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
-                    body: new FormData(updateExperienceForm),
-                });
-                
-                const result = await response.json().catch(() => ({}));
-
-                if (response.ok) {
-                    updateExperienceForm.reset();
-                    closeUpdateModal();
-                    showToast('Berhasil', 'Riwayat Pendidikan berhasil diperbarui!', 'success');
-                    fetchEducations(searchInput.value.trim()); 
-                } else {
-                    const errorMessages = result.errors
-                        ? Object.values(result.errors).flat().map(error => error.message)
-                        : [result.message || `Terjadi kesalahan (status ${response.status}).`];
-                    showToast('Gagal update riwayat pendidikan', errorMessages.join(' '), 'error');
-                }
-            } catch (error) {
-                console.error('Error updating education:', error);
-                showToast('Gagal', 'Tidak dapat terhubung ke server.', 'error');
-            } finally {
-                submitButton.disabled = false;
-            }
-        });
+    async function confirmDeleteEducation() {
+        if (!pendingDeleteId) return;
+        confirmDeleteButton.disabled = true;
+        try {
+            await writeEducation(
+                educationEndpoint(DETAIL_PROJECT_ENDPOINT, pendingDeleteId), 'DELETE',
+            );
+            deleteModal.hidePopover();
+            showToast('Success', 'Education deleted.', 'success');
+            await fetchEducations(searchInput.value.trim());
+        } catch (error) {
+            deleteModal.hidePopover();
+            showToast('Could not delete education', error.message, 'error');
+        } finally {
+            pendingDeleteId = null;
+            confirmDeleteButton.disabled = false;
+        }
     }
 
+    if (confirmDeleteButton) confirmDeleteButton.addEventListener('click', confirmDeleteEducation);
+
+    gridContainer.addEventListener('click', async function(event) {
+        const button = event.target.closest('button[data-action]');
+        if (!button || button.disabled) return;
+        const action = button.dataset.action;
+        const education = educationCache.get(button.dataset.id);
+
+        if (action === 'update') {
+            if (education) openUpdateModal(education);
+            return;
+        }
+        if (action === 'delete') {
+            if (education) openDeleteModal(education);
+            return;
+        }
+
+        button.disabled = true;
+        try {
+            await writeEducation(educationEndpoint(STAR_PROJECT_ENDPOINT, button.dataset.id), 'POST');
+            showToast('Success', 'Star updated.', 'success');
+            await fetchEducations(searchInput.value.trim());
+        } catch (error) {
+            showToast('Request failed', error.message, 'error');
+        } finally {
+            button.disabled = false;
+        }
+    });
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => fetchEducations(searchInput.value.trim()), 300);
+    });
+    searchForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        clearTimeout(searchDebounceTimer);
+        fetchEducations(searchInput.value.trim());
+    });
     fetchEducations(searchInput.value.trim());
 </script>
 {% endblock content %}

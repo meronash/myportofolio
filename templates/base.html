@@ -23,7 +23,7 @@
                     <span class="nav-user">{{ user.username }}</span>
                     <a href="{% url 'main:logout' %}">Logout</a>
                 {% else %}
-                    <a href="{% url 'main:login' %}">Login</a>
+                    <a href="{% url 'main:login' %}">Log in</a>
                     <a href="{% url 'main:register' %}">Register</a>
                 {% endif %}
             </nav>
@@ -33,7 +33,7 @@
 
     <footer class="site-footer">
         <div class="container">
-            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+            <p>&copy; 2026 {{ name }}. Faculty of Computer Science, Universitas Indonesia.</p>
         </div>
     </footer>
     {% include 'components/toast.html' %}

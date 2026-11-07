@@ -8,16 +8,16 @@
             class="education-form-modal__backdrop"
             popovertarget="update-education-modal"
             popovertargetaction="hide"
-            aria-label="Tutup form update riwayat pendidikan"></button>
+            aria-label="Close education update form"></button>
 
     <div class="education-form-modal__content">
         <button type="button"
                 class="education-form-modal__close"
                 popovertarget="update-education-modal"
                 popovertargetaction="hide"
-                aria-label="Tutup form update riwayat pendidikan">×</button>
+                aria-label="Close education update form">×</button>
 
-        <h2 id="update-education-modal-title">Update Riwayat Pendidikan</h2>
+        <h2 id="update-education-modal-title">Update Education</h2>
         <form id="update-education-form" class="education-form">
             <input type="hidden" id="update-id" name="id">
             
@@ -29,8 +29,8 @@
             {% endfor %}
             
             <div class="education-form-modal__actions">
-                <button type="button" class="button button-secondary" popovertarget="update-education-modal" popovertargetaction="hide">Batal</button>
-                <button type="submit" class="button button-warning">Simpan Perubahan</button>
+                <button type="button" class="button button-secondary" popovertarget="update-education-modal" popovertargetaction="hide">Cancel</button>
+                <button type="submit" class="button button-warning">Save Changes</button>
             </div>
         </form>
     </div>
