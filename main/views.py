@@ -120,6 +120,7 @@ def show_projects(request):
     context = {
         "name": "Burhan",
         "title_query": title_query,
+        "is_editor": is_editor(request.user),
         "form": ProjectForm(),
         "update_form": ProjectForm(prefix="update"),
     }
